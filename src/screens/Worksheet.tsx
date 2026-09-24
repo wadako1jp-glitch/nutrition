@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { toBlob } from "html-to-image";
-import type { CSSProperties, MouseEvent as ReactMouseEvent, KeyboardEvent as ReactKeyboardEvent, PointerEvent as ReactPointerEvent } from "react";
+import type { CSSProperties, MouseEvent as ReactMouseEvent, KeyboardEvent as ReactKeyboardEvent } from "react";
 import {
   Dish,
   RowGroup,
@@ -32,7 +32,6 @@ import { WIDE_QUERY, useMediaQuery } from "../hooks/useMediaQuery";
 
 const COLUMN_LABELS = NUTRIENT_LABELS;
 
-const LONG_PRESS_MS = 550;
 const SUGGEST_PAGE_SIZE = 8;
 // ワイド表示でツールバー・材料追加欄を自動で隠すまでの時間
 const WIDE_CHROME_HIDE_MS = 4000;
@@ -125,8 +124,6 @@ export default function Worksheet({
   const weightInputRef = useRef<HTMLInputElement>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
 
-  const longPressTimerRef = useRef<number | null>(null);
-
   // --- ワイド表示（変更仕様004） ---
   // 表の列・レイアウトの切り替えは styles.css のメディアクエリだけで行う。ここでは
   // ツールバー・材料追加欄を隠すかどうかのクラスを付け外しするだけで、DOMの構造は変えない
@@ -170,7 +167,7 @@ export default function Worksheet({
     getSettings().then((s) => setSkipDeleteConfirm(s.skipRowDeleteConfirm));
   }, []);
 
-  // ×ボタン・長押しからの削除要求。設定で確認を省略していれば即削除する
+  // ×ボタンからの削除要求。設定で確認を省略していれば即削除する
   function requestDeleteRow(id: number) {
     if (skipDeleteConfirm) {
       removeRow(id);
@@ -352,30 +349,6 @@ export default function Worksheet({
     if (name !== undefined) setAddDishName(name);
   }
 
-  function clearLongPressTimer() {
-    if (longPressTimerRef.current !== null) {
-      window.clearTimeout(longPressTimerRef.current);
-      longPressTimerRef.current = null;
-    }
-  }
-
-  function handleRowPointerDown(e: ReactPointerEvent<HTMLTableRowElement>, id: number) {
-    if (e.pointerType === "mouse" && e.button !== 0) return;
-    // 行内のボタン・入力欄から始まった操作は長押し判定しない。
-    // setPointerCapture で行がポインタを奪うと、×ボタンやタグのチップのクリックが届かなくなるため。
-    if ((e.target as HTMLElement).closest("button, input, select")) return;
-    clearLongPressTimer();
-    longPressTimerRef.current = window.setTimeout(() => {
-      longPressTimerRef.current = null;
-      requestDeleteRow(id);
-    }, LONG_PRESS_MS);
-    try {
-      e.currentTarget.setPointerCapture?.(e.pointerId);
-    } catch {
-      /* noop */
-    }
-  }
-
   const nutrientRows: NutrientRow[] = rows.map((r) => computeRow(r.food, weightValue(r.usedWeight)));
   const subtotal = sumRows(nutrientRows);
   const totalWeight = round1(rows.reduce((acc, r) => acc + weightValue(r.usedWeight), 0));
@@ -539,14 +512,7 @@ export default function Worksheet({
                     const rowDish = g.dish;
                     return (
                       <Fragment key={row.id}>
-                        <tr
-                          style={tintStyle(dishTint(dishes, row.dishId))}
-                          onPointerDown={(e) => handleRowPointerDown(e, row.id)}
-                          onPointerUp={clearLongPressTimer}
-                          onPointerCancel={clearLongPressTimer}
-                          onPointerLeave={clearLongPressTimer}
-                          onContextMenu={(e) => e.preventDefault()}
-                        >
+                        <tr style={tintStyle(dishTint(dishes, row.dishId))}>
                           <td className="col-del">
                             <button
                               type="button"
@@ -558,15 +524,19 @@ export default function Worksheet({
                             </button>
                           </td>
                           <td className="col-name">
-                            {row.food.name}
-                            <DishSelect
-                              dishes={dishes}
-                              value={rowDish ? rowDish.name : null}
-                              emptyLabel="タグなし"
-                              className={`dish-chip${rowDish ? "" : " empty"}`}
-                              ariaLabel={`${row.food.name}の料理タグ`}
-                              onChange={(v) => setRowDish(row.id, v)}
-                            />
+                            <div className="name-cell">
+                              <span className="food-name" title={row.food.name}>
+                                {row.food.name}
+                              </span>
+                              <DishSelect
+                                dishes={dishes}
+                                value={rowDish ? rowDish.name : null}
+                                emptyLabel="タグなし"
+                                className={`dish-chip${rowDish ? "" : " empty"}`}
+                                ariaLabel={`${row.food.name}の料理タグ`}
+                                onChange={(v) => setRowDish(row.id, v)}
+                              />
+                            </div>
                           </td>
                           <td className="col-weight">
                             <input
@@ -613,7 +583,7 @@ export default function Worksheet({
           </div>
 
           <p className="note">
-            八訂（増補2023）ベース・小数第1位で丸め。使用量＝実際に料理で使う可食部の重さとして計算します。行の削除は「×」または一覧の行を長押しで確認ポップアップが出ます。入力内容は自動的に保存されます。端末を横にする（画面幅が広い）と全項目を1画面に表示し、画面のタップでツールバー・材料追加を表示／非表示します。
+            八訂（増補2023）ベース・小数第1位で丸め。使用量＝実際に料理で使う可食部の重さとして計算します。行の削除は「×」で確認ポップアップが出ます。入力内容は自動的に保存されます。端末を横にする（画面幅が広い）と全項目を1画面に表示し、画面のタップでツールバー・材料追加を表示／非表示します。
           </p>
         </>
       )}

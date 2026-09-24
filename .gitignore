@@ -1,0 +1,8 @@
+node_modules/
+dist/
+dev-dist/
+*.tsbuildinfo
+.claude/settings.local.json
+__pycache__/
+# 学籍番号・氏名が写った用紙の写真。公開リポジトリに含めない
+data/samples/

@@ -1,0 +1,328 @@
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; }
+body {
+  margin: 0;
+  background: #f2f2f2;
+  color: #111;
+  font-family: "BIZ UDPGothic", "Hiragino Sans", "Yu Gothic", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.page {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 12px 10px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.topbar { display: flex; align-items: center; gap: 8px; }
+.badge {
+  padding: 2px 8px;
+  border: 1px solid #222;
+  background: #fff;
+  font-weight: 700;
+  font-size: 13px;
+}
+.back-btn {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border: 1px solid #222;
+  background: #fff;
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.back-btn:active { background: #eee; }
+.list-title { flex: 1; font-size: 17px; font-weight: 700; }
+.menu-title-input {
+  flex: 1;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  border: 1px solid #222;
+  background: #fff;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.sheet { border: 1px solid #222; background: #fff; }
+.sheet-scroll { overflow-x: auto; }
+.sheet-table { border-collapse: collapse; font-size: 12px; width: max-content; }
+.sheet-table th, .sheet-table td {
+  border-bottom: 1px solid #c9c9c9;
+  border-right: 1px solid #c9c9c9;
+  padding: 4px 6px;
+  text-align: right;
+  white-space: nowrap;
+}
+.sheet-table thead th {
+  background: #e6e6e6;
+  border-bottom: 1px solid #222;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+.col-name { position: sticky; left: 34px; z-index: 1; background: #fff; text-align: left; min-width: 120px; }
+.sheet-table thead .col-name { background: #e6e6e6; }
+.sheet-table tbody .col-name { font-size: 12px; padding: 6px; }
+.col-weight { min-width: 52px; border-right: 2px solid #222 !important; }
+
+.col-del { position: sticky; left: 0; z-index: 2; background: #fff; min-width: 34px; width: 34px; padding: 0 !important; text-align: center; }
+.sheet-table thead .col-del { background: #e6e6e6; }
+.subtotal .col-del { background: #eeeeee; }
+.row-del-btn {
+  width: 34px;
+  height: 34px;
+  border: none;
+  background: none;
+  color: #a33;
+  font-size: 17px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+input.num {
+  width: 48px;
+  border: none;
+  text-align: right;
+  font-family: "IBM Plex Mono", Menlo, monospace;
+  font-size: 12px;
+  background: transparent;
+}
+input.num.invalid { background: #fdeceb; outline: 1px solid #b3372c; }
+td.num { font-family: "IBM Plex Mono", Menlo, monospace; }
+
+.subtotal td { font-weight: 700; background: #eeeeee; }
+
+/* 使用量バリデーションの警告表示 */
+.weight-warning {
+  display: block;
+  font-size: 10px;
+  color: #b3372c;
+  margin-top: 2px;
+}
+.weight-warning-mark {
+  color: #b3372c;
+  font-size: 11px;
+  margin-left: 2px;
+}
+
+/* --- 入力カード（常時1枚固定表示） --- */
+.add-card {
+  border: 1px solid #222;
+  background: #fbf8f0;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.add-card-row { display: flex; gap: 8px; align-items: center; }
+.add-card-name { position: relative; }
+.add-card-name input {
+  flex: 1;
+  height: 38px;
+  padding: 0 10px;
+  border: 1px solid #999;
+  background: #fff;
+  font-size: 14px;
+  font-family: inherit;
+}
+.add-card-weight-field { display: flex; flex-direction: column; }
+.add-card-weight input {
+  width: 100px;
+  height: 38px;
+  padding: 0 10px;
+  border: 1px solid #999;
+  background: #fff;
+  font-size: 14px;
+  font-family: "IBM Plex Mono", Menlo, monospace;
+  text-align: right;
+}
+.add-card-weight input.invalid { border-color: #b3372c; background: #fdeceb; }
+.add-card-btn {
+  flex: 1;
+  height: 38px;
+  border: 1px solid #222;
+  background: #222;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+}
+.add-card-btn:disabled { background: #ccc; border-color: #ccc; color: #888; cursor: not-allowed; }
+.add-card-suggestions {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 4px);
+  z-index: 30;
+  background: #fffdf5;
+  border: 1px solid #222;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18);
+}
+
+.suggestions {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-height: 260px;
+  overflow-y: auto;
+}
+.suggestions li {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  padding: 9px 10px;
+  border-bottom: 1px solid #eee;
+  cursor: pointer;
+  white-space: normal;
+}
+.suggestions li:last-child { border-bottom: none; }
+.suggestions li:hover, .suggestions li.active { background: #fff7d6; }
+.s-code { font-family: "IBM Plex Mono", Menlo, monospace; font-size: 11px; color: #666; }
+.s-name { flex: 1; font-size: 13px; }
+.s-waste { font-size: 11px; color: #666; }
+
+.suggestions-more { padding: 0 !important; cursor: default !important; }
+.suggestions-more button {
+  width: 100%;
+  padding: 9px 10px;
+  border: none;
+  background: #f4f4f2;
+  color: #333;
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+}
+.suggestions-more button:hover { background: #ece9de; }
+
+/* 削除確認ポップアップ */
+.confirm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.confirm-box {
+  width: 100%;
+  max-width: 320px;
+  background: #fff;
+  border: 1px solid #222;
+  padding: 18px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.confirm-title { font-size: 14px; font-weight: 700; line-height: 1.5; }
+.confirm-actions { display: flex; gap: 8px; }
+.confirm-actions button {
+  flex: 1;
+  border: 1px solid #222;
+  background: #fff;
+  padding: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+}
+.confirm-delete { background: #b3372c; color: #fff; border-color: #b3372c; }
+
+.note { font-size: 11px; color: #777; line-height: 1.5; }
+
+.mode-toggle {
+  flex-shrink: 0;
+  height: 40px;
+  padding: 0 10px;
+  border: 1px solid #222;
+  background: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+}
+.mode-toggle:active { background: #eee; }
+
+.menu-title-view {
+  flex: 1;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  border: 1px solid #222;
+  background: #fbf8f0;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+/* --- 画像/スクショ用エクスポート表示 --- */
+.export-view {
+  border: 1px solid #222;
+  background: #fff;
+  padding: 14px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.export-head {
+  border-bottom: 2px solid #222;
+  padding-bottom: 8px;
+  margin-bottom: 2px;
+}
+.export-title { font-size: 17px; font-weight: 700; }
+.export-date { font-size: 11px; color: #777; margin-top: 2px; }
+
+/* 提出用の表（＝入力用の表と同じ見た目。操作系の列だけ無い） */
+.export-sheet { border: 1px solid #222; }
+.export-table .col-name { left: 0; }
+
+/* --- 献立一覧ページ --- */
+.menu-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.menu-item {
+  display: flex;
+  align-items: stretch;
+  border: 1px solid #222;
+  background: #fff;
+}
+.menu-item-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 12px 14px;
+  border: none;
+  background: none;
+  text-align: left;
+  font-family: inherit;
+  cursor: pointer;
+}
+.menu-item-main:hover { background: #fbf8f0; }
+.menu-item-title { font-size: 15px; font-weight: 700; }
+.menu-item-meta { font-size: 11px; color: #777; }
+.menu-item-del {
+  flex-shrink: 0;
+  width: 44px;
+  border: none;
+  border-left: 1px solid #ddd;
+  background: none;
+  color: #a33;
+  font-size: 18px;
+  cursor: pointer;
+}
+.menu-item-del:hover { background: #fdeceb; }

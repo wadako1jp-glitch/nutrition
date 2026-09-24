@@ -6,10 +6,10 @@ import { storage } from "./index";
 export interface StoredMenuRow {
   code: string; // 食品番号
   usedWeight: string; // 使用量(g)。正規化済み（半角）の文字列で保存する
-  dishId: string | null; // 料理タグ。null = 未割当
+  dishId: string | null; // 食事区分（朝食・昼食など）。null = 区分なし
 }
 
-// 料理タグ（主食・主菜など）。献立と材料の中間階層だが、ネストではなく材料行へのタグ付けで表す。
+// 食事区分（朝食・昼食・夕食・間食）。献立と材料の中間階層だが、ネストではなく材料行へのタグ付けで表す。
 export interface StoredDish {
   id: string; // 献立内で一意
   name: string; // 献立内で一意

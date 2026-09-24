@@ -35,12 +35,10 @@ interface Row {
   id: number;
   food: Food; // カードで確定済みの食品。一覧に乗る行は常に確定済み
   usedWeight: string; // 使用量(g)＝料理で使う可食部の重さ。栄養計算もこの値をそのまま使う。
-  dishId: string | null; // 料理タグ。null = 未割当
+  dishId: string | null; // 食事区分。null = 区分なし
 }
 
-const CUSTOM_DISH = "__custom__";
-
-// 料理タグのプルダウン（材料追加欄と各材料行で共通）。プリセット＋この献立で作った自由入力タグ。
+// 食事区分のプルダウン（材料追加欄と各材料行で共通）。朝食・昼食・夕食・間食のみ（自由入力なし）。
 function DishSelect({
   dishes,
   value,
@@ -59,7 +57,7 @@ function DishSelect({
   onChange: (value: string) => void;
 }) {
   const names = dishOptionNames(dishes);
-  if (value && !names.includes(value)) names.push(value); // 引き継ぎ中の自由入力タグ
+  if (value && !names.includes(value)) names.push(value); // 旧版で付けたタグ（主食など）を引き継いでいる場合
   return (
     <select className={className} style={style} aria-label={ariaLabel} value={value ?? ""} onChange={(e) => onChange(e.target.value)}>
       <option value="">{emptyLabel}</option>
@@ -68,7 +66,6 @@ function DishSelect({
           {n}
         </option>
       ))}
-      <option value={CUSTOM_DISH}>＋自由入力…</option>
     </select>
   );
 }
@@ -101,7 +98,7 @@ export default function Worksheet({
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
   const [loaded, setLoaded] = useState(false);
 
-  // --- 料理タグ（プルダウンで選んだ時点で作られ、使われなくなったら消える） ---
+  // --- 食事区分（プルダウンで選んだ時点で作られ、使われなくなったら消える） ---
   const [dishes, setDishes] = useState<Dish[]>([]);
   const [addDishName, setAddDishName] = useState<string | null>(null); // 次に追加する材料のタグ（直前の選択を引き継ぐ）
 
@@ -265,22 +262,9 @@ export default function Worksheet({
     setDishes(pruneUnusedDishes(dishes, nextRows));
   }
 
-  // プルダウンの「＋自由入力…」。キャンセル・空欄なら null
-  function promptCustomDishName(): string | null {
-    const name = window.prompt("料理タグ名を入力（例：小鉢、飲み物）")?.trim();
-    return name ? name : null;
-  }
-
-  // タグのプルダウンの値（"" = タグなし、CUSTOM_DISH = 自由入力）をタグ名に解決する。undefined = 変更しない
-  function resolveDishSelection(value: string): string | null | undefined {
-    if (value === "") return null;
-    if (value === CUSTOM_DISH) return promptCustomDishName() ?? undefined;
-    return value;
-  }
-
+  // 食事区分のプルダウンの値（"" = 区分なし）
   function setRowDish(rowId: number, value: string) {
-    const name = resolveDishSelection(value);
-    if (name === undefined) return;
+    const name = value || null;
     let nextDishes = dishes;
     let dishId: string | null = null;
     if (name !== null) {
@@ -295,8 +279,7 @@ export default function Worksheet({
   }
 
   function setAddDish(value: string) {
-    const name = resolveDishSelection(value);
-    if (name !== undefined) setAddDishName(name);
+    setAddDishName(value || null);
   }
 
   function clearLongPressTimer() {
@@ -433,10 +416,10 @@ export default function Worksheet({
               <DishSelect
                 dishes={dishes}
                 value={addDishName}
-                emptyLabel="タグなし"
+                emptyLabel="区分なし"
                 className="add-card-dish"
                 style={{ background: dishTint(dishes, dishes.find((d) => d.name === addDishName)?.id ?? null) }}
-                ariaLabel="追加する材料の料理タグ"
+                ariaLabel="追加する材料の食事区分"
                 onChange={setAddDish}
               />
               <button type="button" className="add-card-btn" disabled={!canCommitAdd} onClick={commitAdd}>
@@ -501,9 +484,9 @@ export default function Worksheet({
                             <DishSelect
                               dishes={dishes}
                               value={rowDish ? rowDish.name : null}
-                              emptyLabel="タグなし"
+                              emptyLabel="区分なし"
                               className={`dish-chip${rowDish ? "" : " empty"}`}
-                              ariaLabel={`${row.food.name}の料理タグ`}
+                              ariaLabel={`${row.food.name}の食事区分`}
                               onChange={(v) => setRowDish(row.id, v)}
                             />
                           </td>
@@ -590,12 +573,12 @@ export default function Worksheet({
 }
 
 // 料理ごとの小計行を出すか。タグを1つも作っていない献立（従来の献立）では、
-// 「未割当 小計」が献立小計と全く同じ行になるだけなので出さない。
+// 「区分なし 小計」が献立小計と全く同じ行になるだけなので出さない。
 function showGroupSubtotal(g: RowGroup<Row>, dishes: Dish[]): boolean {
   return g.dish !== null || dishes.length > 0;
 }
 
-// 料理タグごとの小計行（既存の献立小計と同じ14項目）
+// 食事区分ごとの小計行（既存の献立小計と同じ14項目）
 function GroupSubtotalRow({
   group,
   dishes,
@@ -612,7 +595,7 @@ function GroupSubtotalRow({
   return (
     <tr className="dish-subtotal" style={tintStyle(group.dish ? dishTint(dishes, group.dish.id) : undefined)}>
       {withDelColumn && <td className="col-del"></td>}
-      <td className="col-name">{group.dish ? group.dish.name : "未割当"} 小計</td>
+      <td className="col-name">{group.dish ? group.dish.name : "区分なし"} 小計</td>
       <td className="col-weight num">{weight}</td>
       {NUTRIENT_KEYS.map((k) => (
         <td key={k} className="num">

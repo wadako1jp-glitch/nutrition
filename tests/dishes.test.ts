@@ -13,17 +13,17 @@ describe("料理タグ", () => {
     expect(ensureDish(a.dishes, "  ").ok).toBe(false);
   });
 
-  it("並び順はプリセットの定義順で固定、自由入力はその後ろに作った順", () => {
+  it("並び順は朝食→昼食→夕食→間食で固定。旧版のタグ（主食など）は使われている間だけ後ろに出る", () => {
     let dishes: Parameters<typeof ensureDish>[0] = [];
-    for (const [i, n] of ["汁物", "小鉢", "主食", "飲み物"].entries()) {
+    for (const [i, n] of ["夕食", "主食", "朝食"].entries()) {
       const r = ensureDish(dishes, n, `d${i}`);
       if (r.ok) dishes = r.dishes;
     }
     const byName = Object.fromEntries(dishes.map((d) => [d.name, d.order]));
-    expect(byName["主食"]).toBeLessThan(byName["汁物"]);
-    expect(byName["汁物"]).toBeLessThan(byName["小鉢"]);
-    expect(byName["小鉢"]).toBeLessThan(byName["飲み物"]);
-    expect(dishOptionNames(dishes)).toEqual(["主食", "主菜", "副菜", "副菜2", "汁物", "デザート", "小鉢", "飲み物"]);
+    expect(byName["朝食"]).toBeLessThan(byName["夕食"]);
+    expect(byName["夕食"]).toBeLessThan(byName["主食"]);
+    expect(dishOptionNames(dishes)).toEqual(["朝食", "昼食", "夕食", "間食", "主食"]);
+    expect(dishOptionNames([])).toEqual(["朝食", "昼食", "夕食", "間食"]);
   });
 
   it("どの材料にも使われなくなったタグは消える（材料は消えない）", () => {

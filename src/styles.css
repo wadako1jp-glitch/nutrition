@@ -67,7 +67,7 @@ body {
   line-height: 1.3;
 }
 .col-name { position: sticky; left: 34px; z-index: 1; background: var(--row-bg, #fff); text-align: left; min-width: 120px; }
-/* 料理タグの淡いハイライト（行に --row-bg を渡す。sticky列も同じ色で塗る） */
+/* 食事区分の淡いハイライト（行に --row-bg を渡す。sticky列も同じ色で塗る） */
 .sheet-table tbody tr td { background: var(--row-bg, #fff); }
 .sheet-table thead .col-name { background: #e6e6e6; text-align: left; }
 .sheet-table tbody .col-name { font-size: 12px; padding: 6px; text-align: left; }
@@ -99,11 +99,11 @@ input.num.invalid { background: #fdeceb; outline: 1px solid #b3372c; }
 td.num { font-family: "IBM Plex Mono", Menlo, monospace; }
 
 .sheet-table tbody .subtotal td { font-weight: 700; background: #eeeeee; }
-/* 料理タグごとの小計（タグの淡色のまま、区切り線と太字で献立小計と区別） */
+/* 食事区分ごとの小計（タグの淡色のまま、区切り線と太字で献立小計と区別） */
 .sheet-table tbody .dish-subtotal td { font-weight: 700; border-bottom: 1px solid #888; }
 .sheet-table tbody .dish-subtotal .col-name { font-size: 11px; }
 
-/* --- 料理タグ（行内のチップ型プルダウン。画像用表示では同じ見た目の span） --- */
+/* --- 食事区分（行内のチップ型プルダウン。画像用表示では同じ見た目の span） --- */
 .dish-chip {
   display: inline-block;
   margin-left: 6px;

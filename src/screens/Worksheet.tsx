@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { toBlob } from "html-to-image";
-import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent, PointerEvent as ReactPointerEvent } from "react";
+import type { CSSProperties, MouseEvent as ReactMouseEvent, KeyboardEvent as ReactKeyboardEvent, PointerEvent as ReactPointerEvent } from "react";
 import {
   Dish,
   RowGroup,
@@ -28,11 +28,14 @@ import {
 import { StoredMenu, createMenuId, deleteMenu, getMenu, upsertMenu } from "../lib/storage/menus";
 import { MEALS, Meal, guessMeal, menuDateStamp, menuTitle as buildMenuTitle } from "../core/menuTitle";
 import { getSettings, saveSettings } from "../lib/storage/settings";
+import { WIDE_QUERY, useMediaQuery } from "../hooks/useMediaQuery";
 
 const COLUMN_LABELS = NUTRIENT_LABELS;
 
 const LONG_PRESS_MS = 550;
 const SUGGEST_PAGE_SIZE = 8;
+// ワイド表示でツールバー・材料追加欄を自動で隠すまでの時間
+const WIDE_CHROME_HIDE_MS = 4000;
 
 interface Row {
   id: number;
@@ -123,6 +126,44 @@ export default function Worksheet({
   const nameInputRef = useRef<HTMLInputElement>(null);
 
   const longPressTimerRef = useRef<number | null>(null);
+
+  // --- ワイド表示（変更仕様004） ---
+  // 表の列・レイアウトの切り替えは styles.css のメディアクエリだけで行う。ここでは
+  // ツールバー・材料追加欄を隠すかどうかのクラスを付け外しするだけで、DOMの構造は変えない
+  // （狭い版/広い版の表を出し分けると input が再マウントされ、入力値・フォーカス・IMEの変換中文字が消えるため）。
+  // 入力中の欄を含むツールバー・材料追加欄は :focus-within により隠れない（CSS側）。
+  const wide = useMediaQuery(WIDE_QUERY);
+  const [chromeShown, setChromeShown] = useState(true);
+  const topbarRef = useRef<HTMLElement>(null);
+  const addCardRef = useRef<HTMLDivElement>(null);
+
+  // ワイド表示に入ったら一度見せてから隠す（画像用表示の操作ボタンと同じ挙動）
+  useEffect(() => {
+    if (wide) setChromeShown(true);
+  }, [wide]);
+
+  useEffect(() => {
+    if (!wide || !chromeShown) return;
+    let timer = 0;
+    const arm = () => {
+      timer = window.setTimeout(() => {
+        const active = document.activeElement;
+        // 入力・選択の最中は隠さずに待つ
+        if (active && (topbarRef.current?.contains(active) || addCardRef.current?.contains(active))) arm();
+        else setChromeShown(false);
+      }, WIDE_CHROME_HIDE_MS);
+    };
+    arm();
+    return () => window.clearTimeout(timer);
+  }, [wide, chromeShown]);
+
+  // ワイド表示中、表の余白や数値セルのタップでツールバー・材料追加欄を表示／非表示
+  function handlePageClick(e: ReactMouseEvent<HTMLDivElement>) {
+    if (!wide) return;
+    const target = e.target as HTMLElement;
+    if (target.closest("button, input, select, textarea, label, a, .topbar, .add-card, .confirm-overlay, .export-overlay")) return;
+    setChromeShown((v) => !v);
+  }
 
   useEffect(() => {
     loadFoods().then(setFoods);
@@ -340,8 +381,11 @@ export default function Worksheet({
   const totalWeight = round1(rows.reduce((acc, r) => acc + weightValue(r.usedWeight), 0));
   const groups = groupRowsByDish(rows, dishes);
   return (
-    <div className="page">
-      <header className="topbar">
+    <div className={`page worksheet-page${chromeShown ? " chrome-shown" : ""}`} onClick={handlePageClick}>
+      <button type="button" className="wide-reveal" onClick={() => setChromeShown(true)}>
+        ▼ ツールバー・材料追加を表示（画面タップでも表示／非表示）
+      </button>
+      <header className="topbar" ref={topbarRef}>
         <button type="button" className="back-btn" onClick={onBack} aria-label="一覧に戻る">
           ←
         </button>
@@ -380,7 +424,7 @@ export default function Worksheet({
       ) : (
         <>
           {/* --- 入力カード --- */}
-          <div className="add-card">
+          <div className="add-card" ref={addCardRef}>
             <div className="add-card-row add-card-name">
               <input
                 ref={nameInputRef}
@@ -569,7 +613,7 @@ export default function Worksheet({
           </div>
 
           <p className="note">
-            八訂（増補2023）ベース・小数第1位で丸め。使用量＝実際に料理で使う可食部の重さとして計算します。行の削除は「×」または一覧の行を長押しで確認ポップアップが出ます。入力内容は自動的に保存されます。
+            八訂（増補2023）ベース・小数第1位で丸め。使用量＝実際に料理で使う可食部の重さとして計算します。行の削除は「×」または一覧の行を長押しで確認ポップアップが出ます。入力内容は自動的に保存されます。端末を横にする（画面幅が広い）と全項目を1画面に表示し、画面のタップでツールバー・材料追加を表示／非表示します。
           </p>
         </>
       )}

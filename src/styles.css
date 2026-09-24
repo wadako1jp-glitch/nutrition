@@ -516,3 +516,41 @@ select.dish-chip.empty { border-style: dashed; color: #999; font-weight: 400; ba
 .totals-table { width: 100%; border: 1px solid #222; background: #fff; }
 .totals-table .t-label { text-align: left; }
 .dri-note { border: 1px solid #c9b98f; background: #fbf8f0; padding: 8px 10px; color: #5a4a20; }
+
+/* --- ワイド表示（変更仕様004）: 画面幅が確保できるときに材料表を全項目1画面で見せる ---
+   条件は src/hooks/useMediaQuery.ts の WIDE_QUERY と必ず揃えること。
+   レイアウトの切り替えはCSSだけで行い、表のDOMは縦横で共通（入力中の値・フォーカス・IMEを失わないため）。 */
+.wide-reveal { display: none; }
+@media (min-width: 700px), (orientation: landscape) and (min-width: 600px) {
+  .worksheet-page {
+    max-width: none;
+    min-height: 100%;
+    padding: 6px max(8px, env(safe-area-inset-right)) 16px max(8px, env(safe-area-inset-left));
+    gap: 6px;
+  }
+  /* ツールバー・材料追加欄は既定で隠す（画面タップで再表示）。入力中の欄を含むときは隠さない */
+  .worksheet-page:not(.chrome-shown) > .topbar:not(:focus-within),
+  .worksheet-page:not(.chrome-shown) > .add-card:not(:focus-within) { display: none; }
+  .worksheet-page:not(.chrome-shown) > .wide-reveal {
+    display: block;
+    width: 100%;
+    padding: 4px;
+    border: 1px dashed #999;
+    background: #fff;
+    color: #555;
+    font-size: 11px;
+    font-family: inherit;
+    cursor: pointer;
+  }
+  /* 表を画面幅いっぱいに詰めて横スクロール無しを目指す（収まらない端末では従来どおり横スクロール） */
+  .worksheet-page .sheet .sheet-table { width: 100%; font-size: 11px; }
+  .worksheet-page .sheet .sheet-table th,
+  .worksheet-page .sheet .sheet-table td { padding: 3px; }
+  .worksheet-page .sheet .sheet-table thead th { white-space: normal; font-size: 10px; min-width: 3.4em; }
+  .worksheet-page .sheet .sheet-table .col-name { min-width: 6em; white-space: normal; }
+  .worksheet-page .sheet .sheet-table tbody .col-name { font-size: 11px; padding: 3px 4px; }
+  .worksheet-page .sheet .sheet-table .col-del { min-width: 30px; width: 30px; padding: 0 !important; }
+  .worksheet-page .sheet .sheet-table .col-name { left: 30px; }
+  .worksheet-page .sheet .row-del-btn { width: 30px; height: 28px; }
+  .worksheet-page .sheet input.num { width: 44px; font-size: 11px; }
+}

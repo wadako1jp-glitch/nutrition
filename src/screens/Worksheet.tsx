@@ -1,15 +1,13 @@
 import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent, PointerEvent as ReactPointerEvent } from "react";
 import {
-  DISH_PRESETS,
   Dish,
   RowGroup,
-  addDish,
+  dishOptionNames,
   dishTint,
+  ensureDish,
   groupRowsByDish,
-  removeDish,
-  sortedDishes,
-  toggleDishId,
+  pruneUnusedDishes,
 } from "../core/dishes";
 import {
   Food,
@@ -40,6 +38,41 @@ interface Row {
   dishId: string | null; // 料理タグ。null = 未割当
 }
 
+const CUSTOM_DISH = "__custom__";
+
+// 料理タグのプルダウン（材料追加欄と各材料行で共通）。プリセット＋この献立で作った自由入力タグ。
+function DishSelect({
+  dishes,
+  value,
+  emptyLabel,
+  className,
+  style,
+  ariaLabel,
+  onChange,
+}: {
+  dishes: Dish[];
+  value: string | null; // タグ名
+  emptyLabel: string;
+  className: string;
+  style?: CSSProperties;
+  ariaLabel: string;
+  onChange: (value: string) => void;
+}) {
+  const names = dishOptionNames(dishes);
+  if (value && !names.includes(value)) names.push(value); // 引き継ぎ中の自由入力タグ
+  return (
+    <select className={className} style={style} aria-label={ariaLabel} value={value ?? ""} onChange={(e) => onChange(e.target.value)}>
+      <option value="">{emptyLabel}</option>
+      {names.map((n) => (
+        <option key={n} value={n}>
+          {n}
+        </option>
+      ))}
+      <option value={CUSTOM_DISH}>＋自由入力…</option>
+    </select>
+  );
+}
+
 // 行の淡いハイライト色をCSS変数で渡す（sticky列も同じ色で塗るため）
 function tintStyle(tint: string | undefined): CSSProperties | undefined {
   return tint ? ({ "--row-bg": tint } as CSSProperties) : undefined;
@@ -68,13 +101,9 @@ export default function Worksheet({
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
   const [loaded, setLoaded] = useState(false);
 
-  // --- 料理タグ ---
+  // --- 料理タグ（プルダウンで選んだ時点で作られ、使われなくなったら消える） ---
   const [dishes, setDishes] = useState<Dish[]>([]);
-  const [dishInput, setDishInput] = useState("");
-  const [dishError, setDishError] = useState<string | null>(null);
-  const [confirmDishDeleteId, setConfirmDishDeleteId] = useState<string | null>(null);
-  const [pickerRowId, setPickerRowId] = useState<number | null>(null); // タグ選択を開いている材料行
-  const [addDishId, setAddDishId] = useState<string | null>(null); // 次に追加する材料のタグ（直前の選択を引き継ぐ）
+  const [addDishName, setAddDishName] = useState<string | null>(null); // 次に追加する材料のタグ（直前の選択を引き継ぐ）
 
   // --- 入力カード（常時1枚固定表示） ---
   const [addQuery, setAddQuery] = useState("");
@@ -210,7 +239,15 @@ export default function Worksheet({
 
   function commitAdd() {
     if (!addFood || !isValidWeightNumber(addWeight)) return;
-    setRows((rs) => [...rs, { id: nextRowId++, food: addFood, usedWeight: addWeight, dishId: addDishId }]);
+    let dishId: string | null = null;
+    if (addDishName) {
+      const ensured = ensureDish(dishes, addDishName);
+      if (ensured.ok) {
+        setDishes(ensured.dishes);
+        dishId = ensured.id;
+      }
+    }
+    setRows((rs) => [...rs, { id: nextRowId++, food: addFood, usedWeight: addWeight, dishId }]);
     setAddFood(null);
     setAddQuery("");
     setAddWeight("");
@@ -223,30 +260,43 @@ export default function Worksheet({
   }
 
   function removeRow(id: number) {
-    setRows((rs) => rs.filter((r) => r.id !== id));
+    const nextRows = rows.filter((r) => r.id !== id);
+    setRows(nextRows);
+    setDishes(pruneUnusedDishes(dishes, nextRows));
   }
 
-  function handleAddDish(name: string) {
-    const result = addDish(dishes, name);
-    if (!result.ok) {
-      setDishError(result.error);
-      return;
+  // プルダウンの「＋自由入力…」。キャンセル・空欄なら null
+  function promptCustomDishName(): string | null {
+    const name = window.prompt("料理タグ名を入力（例：小鉢、飲み物）")?.trim();
+    return name ? name : null;
+  }
+
+  // タグのプルダウンの値（"" = タグなし、CUSTOM_DISH = 自由入力）をタグ名に解決する。undefined = 変更しない
+  function resolveDishSelection(value: string): string | null | undefined {
+    if (value === "") return null;
+    if (value === CUSTOM_DISH) return promptCustomDishName() ?? undefined;
+    return value;
+  }
+
+  function setRowDish(rowId: number, value: string) {
+    const name = resolveDishSelection(value);
+    if (name === undefined) return;
+    let nextDishes = dishes;
+    let dishId: string | null = null;
+    if (name !== null) {
+      const ensured = ensureDish(dishes, name);
+      if (!ensured.ok) return;
+      nextDishes = ensured.dishes;
+      dishId = ensured.id;
     }
-    setDishes(result.dishes);
-    setDishInput("");
-    setDishError(null);
+    const nextRows = rows.map((r) => (r.id === rowId ? { ...r, dishId } : r));
+    setRows(nextRows);
+    setDishes(pruneUnusedDishes(nextDishes, nextRows));
   }
 
-  function handleRemoveDish(dishId: string) {
-    const next = removeDish(dishes, rows, dishId);
-    setDishes(next.dishes);
-    setRows(next.rows);
-    if (addDishId === dishId) setAddDishId(null);
-  }
-
-  function setRowDish(rowId: number, selected: string | null) {
-    setRows((rs) => rs.map((r) => (r.id === rowId ? { ...r, dishId: toggleDishId(r.dishId, selected) } : r)));
-    setPickerRowId(null);
+  function setAddDish(value: string) {
+    const name = resolveDishSelection(value);
+    if (name !== undefined) setAddDishName(name);
   }
 
   function clearLongPressTimer() {
@@ -277,8 +327,6 @@ export default function Worksheet({
   const subtotal = sumRows(nutrientRows);
   const totalWeight = round1(rows.reduce((acc, r) => acc + weightValue(r.usedWeight), 0));
   const groups = groupRowsByDish(rows, dishes);
-  const unusedPresets = DISH_PRESETS.filter((p) => !dishes.some((d) => d.name === p));
-
   return (
     <div className="page">
       <header className="topbar">
@@ -382,75 +430,19 @@ export default function Worksheet({
                   <span className="weight-warning">{weightWarningMessage(addWeight)}</span>
                 )}
               </div>
-              {dishes.length > 0 && (
-                <select
-                  className="add-card-dish"
-                  aria-label="追加する材料の料理タグ"
-                  value={addDishId ?? ""}
-                  style={{ background: dishTint(dishes, addDishId) }}
-                  onChange={(e) => setAddDishId(e.target.value || null)}
-                >
-                  <option value="">タグなし</option>
-                  {sortedDishes(dishes).map((d) => (
-                    <option key={d.id} value={d.id}>
-                      {d.name}
-                    </option>
-                  ))}
-                </select>
-              )}
+              <DishSelect
+                dishes={dishes}
+                value={addDishName}
+                emptyLabel="タグなし"
+                className="add-card-dish"
+                style={{ background: dishTint(dishes, dishes.find((d) => d.name === addDishName)?.id ?? null) }}
+                ariaLabel="追加する材料の料理タグ"
+                onChange={setAddDish}
+              />
               <button type="button" className="add-card-btn" disabled={!canCommitAdd} onClick={commitAdd}>
                 材料を追加
               </button>
             </div>
-          </div>
-
-          {/* --- 料理タグ（主食・主菜など） --- */}
-          <div className="dish-bar">
-            <div className="dish-bar-row">
-              <span className="dish-bar-label">料理タグ</span>
-              {sortedDishes(dishes).map((d) => (
-                <span key={d.id} className="dish-tag" style={{ background: dishTint(dishes, d.id) }}>
-                  {d.name}
-                  <button
-                    type="button"
-                    className="dish-tag-del"
-                    aria-label={`料理タグ「${d.name}」を削除`}
-                    onClick={() => setConfirmDishDeleteId(d.id)}
-                  >
-                    ×
-                  </button>
-                </span>
-              ))}
-              {dishes.length === 0 && <span className="dish-bar-empty">未作成（材料を料理ごとにまとめられます）</span>}
-            </div>
-            <div className="dish-bar-row">
-              {unusedPresets.map((p) => (
-                <button key={p} type="button" className="dish-preset" onClick={() => handleAddDish(p)}>
-                  ＋{p}
-                </button>
-              ))}
-              <input
-                className="dish-input"
-                value={dishInput}
-                placeholder="自由入力"
-                onChange={(e) => {
-                  setDishInput(e.target.value);
-                  setDishError(null);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleAddDish(dishInput);
-                }}
-              />
-              <button
-                type="button"
-                className="dish-preset"
-                disabled={!dishInput.trim()}
-                onClick={() => handleAddDish(dishInput)}
-              >
-                追加
-              </button>
-            </div>
-            {dishError && <span className="weight-warning">{dishError}</span>}
           </div>
 
           <div className="sheet">
@@ -506,16 +498,14 @@ export default function Worksheet({
                           </td>
                           <td className="col-name">
                             {row.food.name}
-                            {dishes.length > 0 && (
-                              <button
-                                type="button"
-                                className={`dish-chip${rowDish ? "" : " empty"}`}
-                                aria-expanded={pickerRowId === row.id}
-                                onClick={() => setPickerRowId((id) => (id === row.id ? null : row.id))}
-                              >
-                                {rowDish ? rowDish.name : "＋タグ"}
-                              </button>
-                            )}
+                            <DishSelect
+                              dishes={dishes}
+                              value={rowDish ? rowDish.name : null}
+                              emptyLabel="タグなし"
+                              className={`dish-chip${rowDish ? "" : " empty"}`}
+                              ariaLabel={`${row.food.name}の料理タグ`}
+                              onChange={(v) => setRowDish(row.id, v)}
+                            />
                           </td>
                           <td className="col-weight">
                             <input
@@ -538,28 +528,6 @@ export default function Worksheet({
                             </td>
                           ))}
                         </tr>
-                        {pickerRowId === row.id && (
-                          <tr className="dish-picker-row">
-                            <td colSpan={3 + NUTRIENT_KEYS.length}>
-                              <div className="dish-picker">
-                                {sortedDishes(dishes).map((d) => (
-                                  <button
-                                    key={d.id}
-                                    type="button"
-                                    className={`dish-option${row.dishId === d.id ? " selected" : ""}`}
-                                    style={{ background: dishTint(dishes, d.id) }}
-                                    onClick={() => setRowDish(row.id, d.id)}
-                                  >
-                                    {row.dishId === d.id ? `✓ ${d.name}` : d.name}
-                                  </button>
-                                ))}
-                                <button type="button" className="dish-option" onClick={() => setRowDish(row.id, null)}>
-                                  なし
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        )}
                       </Fragment>
                     );
                   })}
@@ -617,37 +585,6 @@ export default function Worksheet({
           );
         })()}
 
-      {confirmDishDeleteId !== null &&
-        (() => {
-          const target = dishes.find((d) => d.id === confirmDishDeleteId);
-          if (!target) return null;
-          const count = rows.filter((r) => r.dishId === target.id).length;
-          return (
-            <div className="confirm-overlay" onClick={() => setConfirmDishDeleteId(null)}>
-              <div className="confirm-box" onClick={(e) => e.stopPropagation()}>
-                <div className="confirm-title">
-                  料理タグ「{target.name}」を削除しますか？
-                  {count > 0 && <div className="confirm-sub">付いている材料{count}件は消えずに「未割当」に戻ります。</div>}
-                </div>
-                <div className="confirm-actions">
-                  <button type="button" className="confirm-cancel" onClick={() => setConfirmDishDeleteId(null)}>
-                    キャンセル
-                  </button>
-                  <button
-                    type="button"
-                    className="confirm-delete"
-                    onClick={() => {
-                      handleRemoveDish(target.id);
-                      setConfirmDishDeleteId(null);
-                    }}
-                  >
-                    削除する
-                  </button>
-                </div>
-              </div>
-            </div>
-          );
-        })()}
     </div>
   );
 }

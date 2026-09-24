@@ -69,7 +69,7 @@ body {
 .col-name { position: sticky; left: 34px; z-index: 1; background: var(--row-bg, #fff); text-align: left; min-width: 120px; }
 /* 料理タグの淡いハイライト（行に --row-bg を渡す。sticky列も同じ色で塗る） */
 .sheet-table tbody tr td { background: var(--row-bg, #fff); }
-.sheet-table thead .col-name { background: #e6e6e6; }
+.sheet-table thead .col-name { background: #e6e6e6; text-align: left; }
 .sheet-table tbody .col-name { font-size: 12px; padding: 6px; text-align: left; }
 .col-weight { min-width: 52px; border-right: 2px solid #222 !important; }
 
@@ -103,7 +103,7 @@ td.num { font-family: "IBM Plex Mono", Menlo, monospace; }
 .sheet-table tbody .dish-subtotal td { font-weight: 700; border-bottom: 1px solid #888; }
 .sheet-table tbody .dish-subtotal .col-name { font-size: 11px; }
 
-/* --- 料理タグ --- */
+/* --- 料理タグ（行内のチップ型プルダウン。画像用表示では同じ見た目の span） --- */
 .dish-chip {
   display: inline-block;
   margin-left: 6px;
@@ -117,77 +117,16 @@ td.num { font-family: "IBM Plex Mono", Menlo, monospace; }
   line-height: 16px;
   font-family: inherit;
   vertical-align: 1px;
+}
+select.dish-chip {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 20px;
+  max-width: 7em;
+  field-sizing: content; /* 対応ブラウザでは選択中のタグ名の幅に縮める */
   cursor: pointer;
 }
-.dish-chip.empty { border-style: dashed; color: #999; font-weight: 400; background: none; }
-.dish-picker-row td { padding: 0 !important; background: #fffdf5 !important; }
-.dish-picker {
-  position: sticky;
-  left: 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  padding: 8px;
-  width: min(100vw - 40px, 440px);
-}
-.dish-option {
-  min-height: 34px;
-  padding: 0 12px;
-  border: 1px solid #999;
-  background: #fff;
-  font-size: 13px;
-  font-family: inherit;
-  cursor: pointer;
-}
-.dish-option.selected { border: 2px solid #222; font-weight: 700; }
-
-.dish-bar {
-  border: 1px solid #222;
-  background: #fff;
-  padding: 8px 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.dish-bar-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
-.dish-bar-label { font-size: 12px; font-weight: 700; margin-right: 2px; }
-.dish-bar-empty { font-size: 11px; color: #888; }
-.dish-tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  padding-left: 8px;
-  border: 1px solid #8a8272;
-  font-size: 12px;
-  font-weight: 700;
-}
-.dish-tag-del {
-  width: 28px;
-  height: 28px;
-  border: none;
-  background: none;
-  color: #a33;
-  font-size: 14px;
-  cursor: pointer;
-}
-.dish-preset {
-  height: 30px;
-  padding: 0 8px;
-  border: 1px solid #999;
-  background: #fbf8f0;
-  font-size: 12px;
-  font-family: inherit;
-  cursor: pointer;
-}
-.dish-preset:disabled { color: #aaa; cursor: not-allowed; }
-.dish-input {
-  width: 96px;
-  height: 30px;
-  padding: 0 6px;
-  border: 1px solid #999;
-  font-size: 13px;
-  font-family: inherit;
-}
+select.dish-chip.empty { border-style: dashed; color: #999; font-weight: 400; background: none; }
 .add-card-dish {
   height: 38px;
   max-width: 96px;
@@ -196,7 +135,6 @@ td.num { font-family: "IBM Plex Mono", Menlo, monospace; }
   font-size: 13px;
   font-family: inherit;
 }
-.confirm-sub { margin-top: 6px; font-size: 12px; font-weight: 400; color: #555; }
 
 /* 使用量バリデーションの警告表示 */
 .weight-warning {

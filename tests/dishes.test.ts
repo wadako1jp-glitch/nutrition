@@ -1,55 +1,49 @@
 import { describe, expect, it } from "vitest";
-import { addDish, dishTint, groupRowsByDish, removeDish, toggleDishId } from "../src/core/dishes";
+import { dishOptionNames, dishTint, ensureDish, groupRowsByDish, pruneUnusedDishes } from "../src/core/dishes";
 import { normalizeMenu } from "../src/lib/storage/menus";
 
 describe("料理タグ", () => {
-  it("同名タグは登録できない（前後の空白は無視）", () => {
-    const a = addDish([], "主菜", "d1");
-    expect(a.ok).toBe(true);
+  it("選んだ名前のタグが無ければ作り、同名があれば同じタグを使う（前後の空白は無視）", () => {
+    const a = ensureDish([], "主菜", "d1");
+    expect(a).toMatchObject({ ok: true, id: "d1" });
     if (!a.ok) return;
-    const b = addDish(a.dishes, " 主菜 ", "d2");
-    expect(b).toEqual({ ok: false, error: "「主菜」は既にあります" });
-    expect(addDish(a.dishes, "  ").ok).toBe(false);
+    const b = ensureDish(a.dishes, " 主菜 ", "d2");
+    expect(b).toMatchObject({ ok: true, id: "d1" });
+    if (b.ok) expect(b.dishes).toHaveLength(1);
+    expect(ensureDish(a.dishes, "  ").ok).toBe(false);
   });
 
-  it("order は追加順に振られる", () => {
-    let dishes = [] as ReturnType<typeof addDish> extends { dishes: infer D } ? D : never;
-    for (const [i, n] of ["主食", "主菜", "汁物"].entries()) {
-      const r = addDish(dishes, n, `d${i}`);
+  it("並び順はプリセットの定義順で固定、自由入力はその後ろに作った順", () => {
+    let dishes: Parameters<typeof ensureDish>[0] = [];
+    for (const [i, n] of ["汁物", "小鉢", "主食", "飲み物"].entries()) {
+      const r = ensureDish(dishes, n, `d${i}`);
       if (r.ok) dishes = r.dishes;
     }
-    expect(dishes.map((d) => d.order)).toEqual([0, 1, 2]);
+    const byName = Object.fromEntries(dishes.map((d) => [d.name, d.order]));
+    expect(byName["主食"]).toBeLessThan(byName["汁物"]);
+    expect(byName["汁物"]).toBeLessThan(byName["小鉢"]);
+    expect(byName["小鉢"]).toBeLessThan(byName["飲み物"]);
+    expect(dishOptionNames(dishes)).toEqual(["主食", "主菜", "副菜", "副菜2", "汁物", "デザート", "小鉢", "飲み物"]);
   });
 
-  it("同じタグを選び直すと解除、なし(null)でも解除", () => {
-    expect(toggleDishId(null, "d1")).toBe("d1");
-    expect(toggleDishId("d1", "d1")).toBeNull();
-    expect(toggleDishId("d1", "d2")).toBe("d2");
-    expect(toggleDishId("d1", null)).toBeNull();
-  });
-
-  it("タグ削除で材料は消えず未割当になる", () => {
+  it("どの材料にも使われなくなったタグは消える（材料は消えない）", () => {
     const dishes = [
       { id: "a", name: "主食", order: 0 },
       { id: "b", name: "主菜", order: 1 },
     ];
     const rows = [
       { code: "1", dishId: "a" },
-      { code: "2", dishId: "b" },
-    ];
-    const next = removeDish(dishes, rows, "b");
-    expect(next.dishes.map((d) => d.id)).toEqual(["a"]);
-    expect(next.rows).toEqual([
-      { code: "1", dishId: "a" },
       { code: "2", dishId: null },
-    ]);
+    ];
+    expect(pruneUnusedDishes(dishes, rows).map((d) => d.id)).toEqual(["a"]);
+    expect(pruneUnusedDishes(dishes, [...rows, { code: "3", dishId: "b" }])).toBe(dishes);
   });
 
   it("並び順はタグ順→登録順、未割当は末尾。空のタグ・未割当はグループを作らない", () => {
     const dishes = [
       { id: "shu", name: "主菜", order: 1 },
       { id: "shoku", name: "主食", order: 0 },
-      { id: "shiru", name: "汁物", order: 2 },
+      { id: "shiru", name: "汁物", order: 4 },
     ];
     const rows = [
       { code: "r0", dishId: "shu" },
@@ -63,13 +57,13 @@ describe("料理タグ", () => {
     expect(groupRowsByDish(rows.filter((r) => r.dishId), dishes).some((g) => g.dish === null)).toBe(false);
   });
 
-  it("未割当はハイライトなし、タグごとに別の色", () => {
-    const dishes = [
-      { id: "a", name: "主食", order: 0 },
-      { id: "b", name: "主菜", order: 1 },
-    ];
+  it("未割当はハイライトなし、タグごとに別の色で、他のタグの有無で色が変わらない", () => {
+    const shoku = { id: "a", name: "主食", order: 0 };
+    const shiru = { id: "c", name: "汁物", order: 4 };
+    const dishes = [shoku, { id: "b", name: "主菜", order: 1 }, shiru];
     expect(dishTint(dishes, null)).toBeUndefined();
     expect(dishTint(dishes, "a")).not.toBe(dishTint(dishes, "b"));
+    expect(dishTint([shiru], "c")).toBe(dishTint(dishes, "c"));
   });
 });
 

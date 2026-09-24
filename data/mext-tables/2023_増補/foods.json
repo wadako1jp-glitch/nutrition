@@ -198,7 +198,11 @@
 "flag": "推定値"
 },
 "salt_g": 0.0,
-"waste_part": null
+"waste_part": null,
+"raw_equiv": {
+"label": "おおむぎ　押麦　乾",
+"g_per_100g": 35.0
+}
 },
 {
 "group": "01",
@@ -3843,7 +3847,11 @@
 "flag": "推定値"
 },
 "salt_g": 0.0,
-"waste_part": null
+"waste_part": null,
+"raw_equiv": {
+"label": "玄米",
+"g_per_100g": 47.0
+}
 },
 {
 "group": "01",
@@ -3873,7 +3881,11 @@
 "flag": "推定値"
 },
 "salt_g": 0.0,
-"waste_part": null
+"waste_part": null,
+"raw_equiv": {
+"label": "半つき米",
+"g_per_100g": 47.0
+}
 },
 {
 "group": "01",
@@ -3903,7 +3915,11 @@
 "flag": "推定値"
 },
 "salt_g": 0.0,
-"waste_part": null
+"waste_part": null,
+"raw_equiv": {
+"label": "七分つき米",
+"g_per_100g": 47.0
+}
 },
 {
 "group": "01",
@@ -3936,7 +3952,11 @@
 "flag": "推定値"
 },
 "salt_g": 0.0,
-"waste_part": null
+"waste_part": null,
+"raw_equiv": {
+"label": "精白米",
+"g_per_100g": 51.0
+}
 },
 {
 "group": "01",
@@ -3966,7 +3986,11 @@
 "flag": "推定値"
 },
 "salt_g": 0.0,
-"waste_part": null
+"waste_part": null,
+"raw_equiv": {
+"label": "精白米",
+"g_per_100g": 47.0
+}
 },
 {
 "group": "01",
@@ -3999,7 +4023,11 @@
 "flag": "推定値"
 },
 "salt_g": 0.0,
-"waste_part": null
+"waste_part": null,
+"raw_equiv": {
+"label": "精白米",
+"g_per_100g": 55.0
+}
 },
 {
 "group": "01",
@@ -4029,7 +4057,11 @@
 "flag": "推定値"
 },
 "salt_g": 0.0,
-"waste_part": null
+"waste_part": null,
+"raw_equiv": {
+"label": "はいが精白米",
+"g_per_100g": 47.0
+}
 },
 {
 "group": "01",
@@ -4059,7 +4091,11 @@
 "flag": "推定値"
 },
 "salt_g": 0.0,
-"waste_part": null
+"waste_part": null,
+"raw_equiv": {
+"label": "発芽玄米",
+"g_per_100g": 47.0
+}
 },
 {
 "group": "01",
@@ -4200,7 +4236,11 @@
 "flag": "推定値"
 },
 "salt_g": 0.0,
-"waste_part": null
+"waste_part": null,
+"raw_equiv": {
+"label": "玄米",
+"g_per_100g": 20.0
+}
 },
 {
 "group": "01",
@@ -4254,7 +4294,11 @@
 "flag": "推定値"
 },
 "salt_g": 0.0,
-"waste_part": null
+"waste_part": null,
+"raw_equiv": {
+"label": "半つき米",
+"g_per_100g": 20.0
+}
 },
 {
 "group": "01",
@@ -4308,7 +4352,11 @@
 "flag": "推定値"
 },
 "salt_g": 0.0,
-"waste_part": null
+"waste_part": null,
+"raw_equiv": {
+"label": "七分つき米",
+"g_per_100g": 20.0
+}
 },
 {
 "group": "01",
@@ -4362,7 +4410,11 @@
 "flag": "推定値"
 },
 "salt_g": 0.0,
-"waste_part": null
+"waste_part": null,
+"raw_equiv": {
+"label": "精白米",
+"g_per_100g": 20.0
+}
 },
 {
 "group": "01",
@@ -4416,7 +4468,11 @@
 "flag": "推定値"
 },
 "salt_g": 0.0,
-"waste_part": null
+"waste_part": null,
+"raw_equiv": {
+"label": "玄米",
+"g_per_100g": 10.0
+}
 },
 {
 "group": "01",
@@ -4470,7 +4526,11 @@
 "flag": "推定値"
 },
 "salt_g": 0.0,
-"waste_part": null
+"waste_part": null,
+"raw_equiv": {
+"label": "半つき米",
+"g_per_100g": 10.0
+}
 },
 {
 "group": "01",
@@ -4524,7 +4584,11 @@
 "flag": "推定値"
 },
 "salt_g": 0.0,
-"waste_part": null
+"waste_part": null,
+"raw_equiv": {
+"label": "七分つき米",
+"g_per_100g": 10.0
+}
 },
 {
 "group": "01",
@@ -4578,7 +4642,11 @@
 "flag": "推定値"
 },
 "salt_g": 0.0,
-"waste_part": null
+"waste_part": null,
+"raw_equiv": {
+"label": "精白米",
+"g_per_100g": 10.0
+}
 },
 {
 "group": "01",
@@ -4632,7 +4700,11 @@
 "flag": "推定値"
 },
 "salt_g": 0.0,
-"waste_part": null
+"waste_part": null,
+"raw_equiv": {
+"label": "玄米",
+"g_per_100g": 6.0
+}
 },
 {
 "group": "01",
@@ -4686,7 +4758,11 @@
 "flag": "推定値"
 },
 "salt_g": 0.0,
-"waste_part": null
+"waste_part": null,
+"raw_equiv": {
+"label": "半つき米",
+"g_per_100g": 6.0
+}
 },
 {
 "group": "01",
@@ -4740,7 +4816,11 @@
 "flag": "推定値"
 },
 "salt_g": 0.0,
-"waste_part": null
+"waste_part": null,
+"raw_equiv": {
+"label": "七分つき米",
+"g_per_100g": 6.0
+}
 },
 {
 "group": "01",
@@ -4791,7 +4871,11 @@
 "flag": "推定値"
 },
 "salt_g": 0.0,
-"waste_part": null
+"waste_part": null,
+"raw_equiv": {
+"label": "精白米",
+"g_per_100g": 6.0
+}
 },
 {
 "group": "01",
@@ -4941,7 +5025,11 @@
 "flag": "推定値"
 },
 "salt_g": 0.0,
-"waste_part": null
+"waste_part": null,
+"raw_equiv": {
+"label": "玄米",
+"g_per_100g": 47.0
+}
 },
 {
 "group": "01",
@@ -4971,7 +5059,11 @@
 "flag": "推定値"
 },
 "salt_g": 0.0,
-"waste_part": null
+"waste_part": null,
+"raw_equiv": {
+"label": "半つき米",
+"g_per_100g": 47.0
+}
 },
 {
 "group": "01",
@@ -5001,7 +5093,11 @@
 "flag": "推定値"
 },
 "salt_g": 0.0,
-"waste_part": null
+"waste_part": null,
+"raw_equiv": {
+"label": "七分つき米",
+"g_per_100g": 47.0
+}
 },
 {
 "group": "01",
@@ -5031,7 +5127,11 @@
 "flag": "推定値"
 },
 "salt_g": 0.0,
-"waste_part": null
+"waste_part": null,
+"raw_equiv": {
+"label": "精白米",
+"g_per_100g": 47.0
+}
 },
 {
 "group": "01",
@@ -6870,7 +6970,12 @@
 "vb2_mg": 0.02,
 "vc_mg": 25,
 "salt_g": 0.1,
-"waste_part": "両端"
+"waste_part": "両端",
+"peel_alt": {
+"code": "02006",
+"label": "皮なし",
+"waste_pct": 9
+}
 },
 {
 "group": "02",
@@ -6894,7 +6999,12 @@
 "vb2_mg": 0.02,
 "vc_mg": 20,
 "salt_g": 0.1,
-"waste_part": "両端"
+"waste_part": "両端",
+"peel_alt": {
+"code": "02007",
+"label": "皮なし",
+"waste_pct": 5
+}
 },
 {
 "group": "02",
@@ -6942,7 +7052,12 @@
 "vb2_mg": 0.04,
 "vc_mg": 29,
 "salt_g": 0.0,
-"waste_part": "表層及び両端（表皮の割合： 2 %）"
+"waste_part": "表層及び両端（表皮の割合： 2 %）",
+"peel_alt": {
+"code": "02045",
+"label": "皮つき",
+"waste_pct": 2
+}
 },
 {
 "group": "02",
@@ -6966,7 +7081,12 @@
 "vb2_mg": 0.04,
 "vc_mg": 29,
 "salt_g": 0.0,
-"waste_part": "表皮及び両端"
+"waste_part": "表皮及び両端",
+"peel_alt": {
+"code": "02046",
+"label": "皮つき",
+"waste_pct": 4
+}
 },
 {
 "group": "02",
@@ -7374,7 +7494,12 @@
 "vb2_mg": 0.03,
 "vc_mg": 28,
 "salt_g": 0.0,
-"waste_part": "損傷部及び芽"
+"waste_part": "損傷部及び芽",
+"peel_alt": {
+"code": "02017",
+"label": "皮なし",
+"waste_pct": 10
+}
 },
 {
 "group": "02",
@@ -7398,7 +7523,12 @@
 "vb2_mg": 0.02,
 "vc_mg": 13,
 "salt_g": 0.0,
-"waste_part": null
+"waste_part": null,
+"peel_alt": {
+"code": "02066",
+"label": "皮なし",
+"waste_pct": 6
+}
 },
 {
 "group": "02",
@@ -7422,7 +7552,12 @@
 "vb2_mg": 0.03,
 "vc_mg": 16,
 "salt_g": 0.0,
-"waste_part": null
+"waste_part": null,
+"peel_alt": {
+"code": "02067",
+"label": "皮なし",
+"waste_pct": 0
+}
 },
 {
 "group": "02",
@@ -7449,7 +7584,12 @@
 "vb2_mg": 0.03,
 "vc_mg": 28,
 "salt_g": 0.0,
-"waste_part": "表層"
+"waste_part": "表層",
+"peel_alt": {
+"code": "02063",
+"label": "皮つき",
+"waste_pct": 1
+}
 },
 {
 "group": "02",
@@ -7524,7 +7664,12 @@
 "vb2_mg": 0.03,
 "vc_mg": 23,
 "salt_g": 0.0,
-"waste_part": "表皮"
+"waste_part": "表皮",
+"peel_alt": {
+"code": "02064",
+"label": "皮つき",
+"waste_pct": 0
+}
 },
 {
 "group": "02",
@@ -7548,7 +7693,12 @@
 "vb2_mg": 0.02,
 "vc_mg": 16,
 "salt_g": 0.0,
-"waste_part": null
+"waste_part": null,
+"peel_alt": {
+"code": "02065",
+"label": "皮つき",
+"waste_pct": 0
+}
 },
 {
 "group": "02",
@@ -15183,7 +15333,12 @@
 "vb2_mg": 0.03,
 "vc_mg": 19,
 "salt_g": 0.0,
-"waste_part": "根端及び葉柄基部"
+"waste_part": "根端及び葉柄基部",
+"peel_alt": {
+"code": "06038",
+"label": "皮なし",
+"waste_pct": 15
+}
 },
 {
 "group": "06",
@@ -15210,7 +15365,12 @@
 "vb2_mg": 0.03,
 "vc_mg": 16,
 "salt_g": 0.0,
-"waste_part": null
+"waste_part": null,
+"peel_alt": {
+"code": "06039",
+"label": "皮なし",
+"waste_pct": 0
+}
 },
 {
 "group": "06",
@@ -15237,7 +15397,12 @@
 "vb2_mg": 0.03,
 "vc_mg": 18,
 "salt_g": 0.0,
-"waste_part": "根端、葉柄基部及び皮"
+"waste_part": "根端、葉柄基部及び皮",
+"peel_alt": {
+"code": "06036",
+"label": "皮つき",
+"waste_pct": 9
+}
 },
 {
 "group": "06",
@@ -15264,7 +15429,12 @@
 "vb2_mg": 0.03,
 "vc_mg": 16,
 "salt_g": 0.0,
-"waste_part": null
+"waste_part": null,
+"peel_alt": {
+"code": "06037",
+"label": "皮つき",
+"waste_pct": 0
+}
 },
 {
 "group": "06",
@@ -15315,7 +15485,12 @@
 "vb2_mg": 0.03,
 "vc_mg": 19,
 "salt_g": 2.8,
-"waste_part": null
+"waste_part": null,
+"peel_alt": {
+"code": "06042",
+"label": "皮なし",
+"waste_pct": 0
+}
 },
 {
 "group": "06",
@@ -15342,7 +15517,12 @@
 "vb2_mg": 0.03,
 "vc_mg": 21,
 "salt_g": 4.3,
-"waste_part": null
+"waste_part": null,
+"peel_alt": {
+"code": "06041",
+"label": "皮つき",
+"waste_pct": 0
+}
 },
 {
 "group": "06",
@@ -15393,7 +15573,12 @@
 "vb2_mg": 0.04,
 "vc_mg": 28,
 "salt_g": 2.2,
-"waste_part": null
+"waste_part": null,
+"peel_alt": {
+"code": "06045",
+"label": "皮なし",
+"waste_pct": 0
+}
 },
 {
 "group": "06",
@@ -15420,7 +15605,12 @@
 "vb2_mg": 0.05,
 "vc_mg": 20,
 "salt_g": 6.9,
-"waste_part": null
+"waste_part": null,
+"peel_alt": {
+"code": "06044",
+"label": "皮つき",
+"waste_pct": 0
+}
 },
 {
 "group": "06",
@@ -16974,7 +17164,13 @@
 "vb2_mg": 0.02,
 "vc_mg": 1,
 "salt_g": 0.0,
-"waste_part": null
+"waste_part": null,
+"grated": {
+"ratio_pct": 24.0,
+"source_code": "06103",
+"source_name": "（しょうが類）　しょうが　根茎　皮なし　生",
+"source_waste_pct": 20
+}
 },
 {
 "group": "06",
@@ -17001,7 +17197,13 @@
 "vb2_mg": 0.01,
 "vc_mg": 1,
 "salt_g": 0.0,
-"waste_part": null
+"waste_part": null,
+"grated": {
+"ratio_pct": 76.0,
+"source_code": "06103",
+"source_name": "（しょうが類）　しょうが　根茎　皮なし　生",
+"source_waste_pct": 20
+}
 },
 {
 "group": "06",
@@ -17751,7 +17953,12 @@
 "vb2_mg": 0.01,
 "vc_mg": 12,
 "salt_g": 0.0,
-"waste_part": "根端及び葉柄基部"
+"waste_part": "根端及び葉柄基部",
+"peel_alt": {
+"code": "06134",
+"label": "皮なし",
+"waste_pct": 15
+}
 },
 {
 "group": "06",
@@ -17781,7 +17988,12 @@
 "vb2_mg": 0.01,
 "vc_mg": 9,
 "salt_g": 0.0,
-"waste_part": null
+"waste_part": null,
+"peel_alt": {
+"code": "06135",
+"label": "皮なし",
+"waste_pct": 0
+}
 },
 {
 "group": "06",
@@ -17808,7 +18020,12 @@
 "vb2_mg": 0.01,
 "vc_mg": 11,
 "salt_g": 0.0,
-"waste_part": "根端、葉柄基部及び皮"
+"waste_part": "根端、葉柄基部及び皮",
+"peel_alt": {
+"code": "06132",
+"label": "皮つき",
+"waste_pct": 10
+}
 },
 {
 "group": "06",
@@ -17835,7 +18052,13 @@
 "vb2_mg": 0.01,
 "vc_mg": 7,
 "salt_g": 0.1,
-"waste_part": null
+"waste_part": null,
+"grated": {
+"ratio_pct": 18.0,
+"source_code": "06134",
+"source_name": "（だいこん類）　だいこん　根　皮なし　生",
+"source_waste_pct": 15
+}
 },
 {
 "group": "06",
@@ -17865,7 +18088,13 @@
 "vb2_mg": 0.01,
 "vc_mg": 7,
 "salt_g": 0.1,
-"waste_part": null
+"waste_part": null,
+"grated": {
+"ratio_pct": 82.0,
+"source_code": "06134",
+"source_name": "（だいこん類）　だいこん　根　皮なし　生",
+"source_waste_pct": 15
+}
 },
 {
 "group": "06",
@@ -17892,7 +18121,13 @@
 "vb2_mg": 0.01,
 "vc_mg": 6,
 "salt_g": 0.1,
-"waste_part": null
+"waste_part": null,
+"grated": {
+"ratio_pct": 20.0,
+"source_code": "06134",
+"source_name": "（だいこん類）　だいこん　根　皮なし　生",
+"source_waste_pct": 15
+}
 },
 {
 "group": "06",
@@ -17919,7 +18154,12 @@
 "vb2_mg": 0.01,
 "vc_mg": 9,
 "salt_g": 0.0,
-"waste_part": null
+"waste_part": null,
+"peel_alt": {
+"code": "06133",
+"label": "皮つき",
+"waste_pct": 0
+}
 },
 {
 "group": "06",
@@ -20280,7 +20520,12 @@
 "vb2_mg": 0.06,
 "vc_mg": 6,
 "salt_g": 0.1,
-"waste_part": "根端及び葉柄基部"
+"waste_part": "根端及び葉柄基部",
+"peel_alt": {
+"code": "06214",
+"label": "皮なし",
+"waste_pct": 10
+}
 },
 {
 "group": "06",
@@ -20304,7 +20549,12 @@
 "vb2_mg": 0.05,
 "vc_mg": 4,
 "salt_g": 0.1,
-"waste_part": null
+"waste_part": null,
+"peel_alt": {
+"code": "06215",
+"label": "皮なし",
+"waste_pct": 0
+}
 },
 {
 "group": "06",
@@ -20328,7 +20578,12 @@
 "vb2_mg": 0.03,
 "vc_mg": 4,
 "salt_g": 0.1,
-"waste_part": "根端、葉柄基部及び皮"
+"waste_part": "根端、葉柄基部及び皮",
+"peel_alt": {
+"code": "06212",
+"label": "皮つき",
+"waste_pct": 3
+}
 },
 {
 "group": "06",
@@ -20352,7 +20607,12 @@
 "vb2_mg": 0.05,
 "vc_mg": 4,
 "salt_g": 0.1,
-"waste_part": null
+"waste_part": null,
+"peel_alt": {
+"code": "06213",
+"label": "皮つき",
+"waste_pct": 0
+}
 },
 {
 "group": "06",
@@ -20607,7 +20867,12 @@
 "vb2_mg": 0.05,
 "vc_mg": 8,
 "salt_g": 0.0,
-"waste_part": "根端及び葉柄基部"
+"waste_part": "根端及び葉柄基部",
+"peel_alt": {
+"code": "06220",
+"label": "皮なし",
+"waste_pct": 20
+}
 },
 {
 "group": "06",
@@ -20631,7 +20896,12 @@
 "vb2_mg": 0.05,
 "vc_mg": 6,
 "salt_g": 0.0,
-"waste_part": null
+"waste_part": null,
+"peel_alt": {
+"code": "06221",
+"label": "皮なし",
+"waste_pct": 0
+}
 },
 {
 "group": "06",
@@ -20655,7 +20925,12 @@
 "vb2_mg": 0.05,
 "vc_mg": 8,
 "salt_g": 0.0,
-"waste_part": "根端、葉柄基部及び皮"
+"waste_part": "根端、葉柄基部及び皮",
+"peel_alt": {
+"code": "06218",
+"label": "皮つき",
+"waste_pct": 15
+}
 },
 {
 "group": "06",
@@ -20679,7 +20954,12 @@
 "vb2_mg": 0.06,
 "vc_mg": 8,
 "salt_g": 0.0,
-"waste_part": null
+"waste_part": null,
+"peel_alt": {
+"code": "06219",
+"label": "皮つき",
+"waste_pct": 0
+}
 },
 {
 "group": "06",
@@ -27726,7 +28006,12 @@
 "vb2_mg": 0.01,
 "vc_mg": 2,
 "salt_g": 0.0,
-"waste_part": "果皮及び種子"
+"waste_part": "果皮及び種子",
+"peel_alt": {
+"code": "07178",
+"label": "皮つき",
+"waste_pct": 0
+}
 },
 {
 "group": "07",
@@ -27750,7 +28035,12 @@
 "vb2_mg": 0.01,
 "vc_mg": 3,
 "salt_g": 0.0,
-"waste_part": null
+"waste_part": null,
+"peel_alt": {
+"code": "07116",
+"label": "皮なし",
+"waste_pct": 15
+}
 },
 {
 "group": "07",
@@ -28602,7 +28892,12 @@
 },
 "vc_mg": 4,
 "salt_g": 0.0,
-"waste_part": "果皮及び果しん部"
+"waste_part": "果皮及び果しん部",
+"peel_alt": {
+"code": "07176",
+"label": "皮つき",
+"waste_pct": 8
+}
 },
 {
 "group": "07",
@@ -28626,7 +28921,12 @@
 "vb2_mg": 0.01,
 "vc_mg": 6,
 "salt_g": 0.0,
-"waste_part": "果しん部"
+"waste_part": "果しん部",
+"peel_alt": {
+"code": "07148",
+"label": "皮なし",
+"waste_pct": 15
+}
 },
 {
 "group": "07",
@@ -31749,7 +32049,12 @@
 "flag": "Tr"
 },
 "salt_g": 0.3,
-"waste_part": "頭部、内臓、骨、ひれ等（三枚下ろし）"
+"waste_part": "頭部、内臓、骨、ひれ等（三枚下ろし）",
+"peel_alt": {
+"code": "10389",
+"label": "皮なし",
+"waste_pct": 0
+}
 },
 {
 "group": "10",
@@ -31776,7 +32081,12 @@
 "flag": "Tr"
 },
 "salt_g": 0.3,
-"waste_part": null
+"waste_part": null,
+"peel_alt": {
+"code": "10003",
+"label": "皮つき",
+"waste_pct": 55
+}
 },
 {
 "group": "10",
@@ -35916,7 +36226,12 @@
 "vb2_mg": 0.1,
 "vc_mg": 2,
 "salt_g": 0.1,
-"waste_part": null
+"waste_part": null,
+"peel_alt": {
+"code": "10438",
+"label": "皮なし",
+"waste_pct": 0
+}
 },
 {
 "group": "10",
@@ -35940,7 +36255,12 @@
 "vb2_mg": 0.1,
 "vc_mg": 1,
 "salt_g": 0.1,
-"waste_part": null
+"waste_part": null,
+"peel_alt": {
+"code": "10439",
+"label": "皮なし",
+"waste_pct": 10
+}
 },
 {
 "group": "10",
@@ -35964,7 +36284,12 @@
 "vb2_mg": 0.11,
 "vc_mg": 2,
 "salt_g": 0.1,
-"waste_part": null
+"waste_part": null,
+"peel_alt": {
+"code": "10440",
+"label": "皮なし",
+"waste_pct": 8
+}
 },
 {
 "group": "10",
@@ -35988,7 +36313,12 @@
 "vb2_mg": 0.11,
 "vc_mg": 2,
 "salt_g": 0.1,
-"waste_part": null
+"waste_part": null,
+"peel_alt": {
+"code": "10441",
+"label": "皮なし",
+"waste_pct": 8
+}
 },
 {
 "group": "10",
@@ -36012,7 +36342,12 @@
 "vb2_mg": 0.13,
 "vc_mg": 3,
 "salt_g": 0.1,
-"waste_part": null
+"waste_part": null,
+"peel_alt": {
+"code": "10442",
+"label": "皮なし",
+"waste_pct": 10
+}
 },
 {
 "group": "10",
@@ -36036,7 +36371,12 @@
 "vb2_mg": 0.13,
 "vc_mg": 2,
 "salt_g": 0.1,
-"waste_part": null
+"waste_part": null,
+"peel_alt": {
+"code": "10443",
+"label": "皮なし",
+"waste_pct": 10
+}
 },
 {
 "group": "10",
@@ -36057,7 +36397,12 @@
 "vb2_mg": 0.14,
 "vc_mg": 2,
 "salt_g": 0.2,
-"waste_part": null
+"waste_part": null,
+"peel_alt": {
+"code": "10444",
+"label": "皮なし",
+"waste_pct": 10
+}
 },
 {
 "group": "10",
@@ -36081,7 +36426,12 @@
 "vb2_mg": 0.08,
 "vc_mg": 2,
 "salt_g": 0.1,
-"waste_part": null
+"waste_part": null,
+"peel_alt": {
+"code": "10144",
+"label": "皮つき",
+"waste_pct": 0
+}
 },
 {
 "group": "10",
@@ -36105,7 +36455,12 @@
 "vb2_mg": 0.1,
 "vc_mg": 2,
 "salt_g": 0.1,
-"waste_part": "皮、小骨"
+"waste_part": "皮、小骨",
+"peel_alt": {
+"code": "10433",
+"label": "皮つき",
+"waste_pct": 0
+}
 },
 {
 "group": "10",
@@ -36129,7 +36484,12 @@
 "vb2_mg": 0.1,
 "vc_mg": 2,
 "salt_g": 0.1,
-"waste_part": "皮、小骨"
+"waste_part": "皮、小骨",
+"peel_alt": {
+"code": "10434",
+"label": "皮つき",
+"waste_pct": 0
+}
 },
 {
 "group": "10",
@@ -36153,7 +36513,12 @@
 "vb2_mg": 0.11,
 "vc_mg": 2,
 "salt_g": 0.1,
-"waste_part": "皮、小骨"
+"waste_part": "皮、小骨",
+"peel_alt": {
+"code": "10435",
+"label": "皮つき",
+"waste_pct": 0
+}
 },
 {
 "group": "10",
@@ -36177,7 +36542,12 @@
 "vb2_mg": 0.11,
 "vc_mg": 1,
 "salt_g": 0.1,
-"waste_part": "皮、小骨"
+"waste_part": "皮、小骨",
+"peel_alt": {
+"code": "10145",
+"label": "皮つき",
+"waste_pct": 0
+}
 },
 {
 "group": "10",
@@ -36201,7 +36571,12 @@
 "vb2_mg": 0.13,
 "vc_mg": 2,
 "salt_g": 0.1,
-"waste_part": "皮、小骨"
+"waste_part": "皮、小骨",
+"peel_alt": {
+"code": "10436",
+"label": "皮つき",
+"waste_pct": 0
+}
 },
 {
 "group": "10",
@@ -36222,7 +36597,12 @@
 "vb2_mg": 0.13,
 "vc_mg": 2,
 "salt_g": 0.2,
-"waste_part": "皮、小骨"
+"waste_part": "皮、小骨",
+"peel_alt": {
+"code": "10437",
+"label": "皮つき",
+"waste_pct": 0
+}
 },
 {
 "group": "10",
@@ -36246,7 +36626,12 @@
 "vb2_mg": 0.1,
 "vc_mg": 2,
 "salt_g": 0.2,
-"waste_part": null
+"waste_part": null,
+"peel_alt": {
+"code": "10402",
+"label": "皮なし",
+"waste_pct": 0
+}
 },
 {
 "group": "10",
@@ -36270,7 +36655,12 @@
 "vb2_mg": 0.12,
 "vc_mg": 3,
 "salt_g": 0.1,
-"waste_part": null
+"waste_part": null,
+"peel_alt": {
+"code": "10146",
+"label": "皮つき",
+"waste_pct": 0
+}
 },
 {
 "group": "10",
@@ -37098,7 +37488,12 @@
 "vb2_mg": 0.28,
 "vc_mg": 0.0,
 "salt_g": 0.4,
-"waste_part": "頭部、内臓、骨、ひれ等）"
+"waste_part": "頭部、内臓、骨、ひれ等）",
+"peel_alt": {
+"code": "10407",
+"label": "皮なし",
+"waste_pct": 0
+}
 },
 {
 "group": "10",
@@ -37122,7 +37517,12 @@
 "vb2_mg": 0.32,
 "vc_mg": 1,
 "salt_g": 0.3,
-"waste_part": null
+"waste_part": null,
+"peel_alt": {
+"code": "10173",
+"label": "皮つき",
+"waste_pct": 0
+}
 },
 {
 "group": "10",
@@ -37647,7 +38047,12 @@
 "vb2_mg": 0.08,
 "vc_mg": 3,
 "salt_g": 0.1,
-"waste_part": "頭部、内臓、骨、ひれ等（三枚下ろし）"
+"waste_part": "頭部、内臓、骨、ひれ等（三枚下ろし）",
+"peel_alt": {
+"code": "10408",
+"label": "皮なし",
+"waste_pct": 0
+}
 },
 {
 "group": "10",
@@ -37719,7 +38124,12 @@
 "vb2_mg": 0.08,
 "vc_mg": 3,
 "salt_g": 0.1,
-"waste_part": null
+"waste_part": null,
+"peel_alt": {
+"code": "10193",
+"label": "皮つき",
+"waste_pct": 55
+}
 },
 {
 "group": "10",
@@ -38862,7 +39272,12 @@
 "vb2_mg": 0.34,
 "vc_mg": 5,
 "salt_g": 0.1,
-"waste_part": "頭部、内臓、骨、ひれ等（五枚下ろし）"
+"waste_part": "頭部、内臓、骨、ひれ等（五枚下ろし）",
+"peel_alt": {
+"code": "10410",
+"label": "皮なし",
+"waste_pct": 0
+}
 },
 {
 "group": "10",
@@ -38886,7 +39301,12 @@
 "vb2_mg": 0.07,
 "vc_mg": 10,
 "salt_g": 0.1,
-"waste_part": null
+"waste_part": null,
+"peel_alt": {
+"code": "10235",
+"label": "皮つき",
+"waste_pct": 40
+}
 },
 {
 "group": "10",
@@ -39111,7 +39531,12 @@
 "vb2_mg": 0.21,
 "vc_mg": 2,
 "salt_g": 0.1,
-"waste_part": "頭部、内臓、骨、ひれ等)"
+"waste_part": "頭部、内臓、骨、ひれ等)",
+"peel_alt": {
+"code": "10411",
+"label": "皮なし",
+"waste_pct": 0
+}
 },
 {
 "group": "10",
@@ -39135,7 +39560,12 @@
 "vb2_mg": 0.23,
 "vc_mg": 3,
 "salt_g": 0.1,
-"waste_part": null
+"waste_part": null,
+"peel_alt": {
+"code": "10243",
+"label": "皮つき",
+"waste_pct": 0
+}
 },
 {
 "group": "10",
@@ -42678,7 +43108,12 @@
 "vb2_mg": 0.04,
 "vc_mg": 2,
 "salt_g": 0.5,
-"waste_part": null
+"waste_part": null,
+"peel_alt": {
+"code": "10418",
+"label": "皮なし",
+"waste_pct": 0
+}
 },
 {
 "group": "10",
@@ -42702,7 +43137,12 @@
 "vb2_mg": 0.04,
 "vc_mg": 2,
 "salt_g": 0.5,
-"waste_part": null
+"waste_part": null,
+"peel_alt": {
+"code": "10417",
+"label": "皮つき",
+"waste_pct": 0
+}
 },
 {
 "group": "10",
@@ -43170,7 +43610,12 @@
 "vb2_mg": 0.08,
 "vc_mg": 1,
 "salt_g": 1,
-"waste_part": "内臓等"
+"waste_part": "内臓等",
+"peel_alt": {
+"code": "10471",
+"label": "皮なし",
+"waste_pct": 40
+}
 },
 {
 "group": "10",
@@ -43191,7 +43636,12 @@
 "vb2_mg": 0.04,
 "vc_mg": 2,
 "salt_g": 1.8,
-"waste_part": "頭部、内臓等"
+"waste_part": "頭部、内臓等",
+"peel_alt": {
+"code": "10361",
+"label": "皮つき",
+"waste_pct": 15
+}
 },
 {
 "group": "10",
@@ -50601,7 +51051,12 @@
 "vb2_mg": 0.26,
 "vc_mg": 2,
 "salt_g": 0.2,
-"waste_part": null
+"waste_part": null,
+"peel_alt": {
+"code": "11247",
+"label": "皮なし",
+"waste_pct": 0
+}
 },
 {
 "group": "11",
@@ -50625,7 +51080,12 @@
 "vb2_mg": 0.41,
 "vc_mg": 3,
 "salt_g": 0.2,
-"waste_part": null
+"waste_part": null,
+"peel_alt": {
+"code": "11206",
+"label": "皮つき",
+"waste_pct": 0
+}
 },
 {
 "group": "11",
@@ -50775,7 +51235,12 @@
 "vb2_mg": 0.08,
 "vc_mg": 1,
 "salt_g": 0.1,
-"waste_part": null
+"waste_part": null,
+"peel_alt": {
+"code": "11214",
+"label": "皮なし",
+"waste_pct": 0
+}
 },
 {
 "group": "11",
@@ -50799,7 +51264,12 @@
 "vb2_mg": 0.1,
 "vc_mg": 1,
 "salt_g": 0.1,
-"waste_part": null
+"waste_part": null,
+"peel_alt": {
+"code": "11213",
+"label": "皮つき",
+"waste_pct": 0
+}
 },
 {
 "group": "11",
@@ -50823,7 +51293,12 @@
 "vb2_mg": 0.23,
 "vc_mg": 1,
 "salt_g": 0.1,
-"waste_part": null
+"waste_part": null,
+"peel_alt": {
+"code": "11216",
+"label": "皮なし",
+"waste_pct": 0
+}
 },
 {
 "group": "11",
@@ -50847,7 +51322,12 @@
 "vb2_mg": 0.31,
 "vc_mg": 1,
 "salt_g": 0.1,
-"waste_part": null
+"waste_part": null,
+"peel_alt": {
+"code": "11215",
+"label": "皮つき",
+"waste_pct": 0
+}
 },
 {
 "group": "11",
@@ -50970,7 +51450,12 @@
 "vb2_mg": 0.1,
 "vc_mg": 3,
 "salt_g": 0.1,
-"waste_part": null
+"waste_part": null,
+"peel_alt": {
+"code": "11220",
+"label": "皮なし",
+"waste_pct": 0
+}
 },
 {
 "group": "11",
@@ -50994,7 +51479,12 @@
 "vb2_mg": 0.17,
 "vc_mg": 3,
 "salt_g": 0.2,
-"waste_part": null
+"waste_part": null,
+"peel_alt": {
+"code": "11288",
+"label": "皮なし",
+"waste_pct": 0
+}
 },
 {
 "group": "11",
@@ -51018,7 +51508,12 @@
 "vb2_mg": 0.11,
 "vc_mg": 3,
 "salt_g": 0.1,
-"waste_part": null
+"waste_part": null,
+"peel_alt": {
+"code": "11219",
+"label": "皮つき",
+"waste_pct": 0
+}
 },
 {
 "group": "11",
@@ -51042,7 +51537,12 @@
 "vb2_mg": 0.18,
 "vc_mg": 4,
 "salt_g": 0.2,
-"waste_part": null
+"waste_part": null,
+"peel_alt": {
+"code": "11287",
+"label": "皮つき",
+"waste_pct": 0
+}
 },
 {
 "group": "11",
@@ -51066,7 +51566,12 @@
 "vb2_mg": 0.15,
 "vc_mg": 3,
 "salt_g": 0.2,
-"waste_part": null
+"waste_part": null,
+"peel_alt": {
+"code": "11224",
+"label": "皮なし",
+"waste_pct": 0
+}
 },
 {
 "group": "11",
@@ -51090,7 +51595,12 @@
 "vb2_mg": 0.21,
 "vc_mg": 2,
 "salt_g": 0.1,
-"waste_part": null
+"waste_part": null,
+"peel_alt": {
+"code": "11226",
+"label": "皮なし",
+"waste_pct": 0
+}
 },
 {
 "group": "11",
@@ -51114,7 +51624,12 @@
 "vb2_mg": 0.24,
 "vc_mg": 2,
 "salt_g": 0.2,
-"waste_part": null
+"waste_part": null,
+"peel_alt": {
+"code": "11225",
+"label": "皮なし",
+"waste_pct": 0
+}
 },
 {
 "group": "11",
@@ -51135,7 +51650,12 @@
 "vb2_mg": 0.23,
 "vc_mg": 2,
 "salt_g": 2.5,
-"waste_part": null
+"waste_part": null,
+"peel_alt": {
+"code": "11290",
+"label": "皮なし",
+"waste_pct": 0
+}
 },
 {
 "group": "11",
@@ -51159,7 +51679,12 @@
 "vb2_mg": 0.19,
 "vc_mg": 3,
 "salt_g": 0.2,
-"waste_part": null
+"waste_part": null,
+"peel_alt": {
+"code": "11221",
+"label": "皮つき",
+"waste_pct": 0
+}
 },
 {
 "group": "11",
@@ -51183,7 +51708,12 @@
 "vb2_mg": 0.18,
 "vc_mg": 2,
 "salt_g": 0.1,
-"waste_part": null
+"waste_part": null,
+"peel_alt": {
+"code": "11223",
+"label": "皮つき",
+"waste_pct": 1
+}
 },
 {
 "group": "11",
@@ -51207,7 +51737,12 @@
 "vb2_mg": 0.23,
 "vc_mg": 3,
 "salt_g": 0.2,
-"waste_part": null
+"waste_part": null,
+"peel_alt": {
+"code": "11222",
+"label": "皮つき",
+"waste_pct": 1
+}
 },
 {
 "group": "11",
@@ -51228,7 +51763,12 @@
 "vb2_mg": 0.25,
 "vc_mg": 2,
 "salt_g": 2.7,
-"waste_part": null
+"waste_part": null,
+"peel_alt": {
+"code": "11289",
+"label": "皮つき",
+"waste_pct": 0
+}
 },
 {
 "group": "11",

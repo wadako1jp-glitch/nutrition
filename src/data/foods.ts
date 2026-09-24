@@ -31,6 +31,10 @@ export interface Food {
   vc_mg: Cell;
   salt_g: Cell;
   waste_part?: string | null; // 廃棄部位（成分表の備考「廃棄部位：」）。発注量表示で何を切り捨てたかを示す
+  // 以下は発注量表示で「実際に買う形」を示すための、成分表の備考から取り出した値（該当する食品にだけある）
+  raw_equiv?: { label: string; g_per_100g: number }; // めし・かゆ: 可食部100gに含まれる炊く前の米の重さ
+  grated?: { ratio_pct: number; source_code: string; source_name: string; source_waste_pct: Cell }; // おろし: おろす前の食品に対する割合
+  peel_alt?: { code: string; label: string; waste_pct: Cell }; // 皮つき⇔皮なしの対になる食品
 }
 
 // Cell -> 計算に使える数値（Tr・推定値は0扱い、欠損はnull）

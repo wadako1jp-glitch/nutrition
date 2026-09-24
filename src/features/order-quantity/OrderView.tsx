@@ -38,9 +38,11 @@ export default function OrderView({
   const lines = new Map<number, OrderLine>(rows.map((r) => [r.id, orderLine(r.food, weightValue(r.usedWeight), servings)]));
   const all = [...lines.values()];
   const totalUsed = round1(all.reduce((a, l) => a + l.usedTotal, 0));
-  const totalOrder = round1(all.reduce((a, l) => a + l.orderTotal, 0));
-  const totalDiscard = round1(all.reduce((a, l) => a + l.discardTotal, 0));
+  // 合計は「実際に買う量」の合計（めし・おろしは買う形に換算した量で足す）
+  const totalOrder = round1(all.reduce((a, l) => a + l.buyTotal, 0));
+  const totalDiscard = round1(all.reduce((a, l) => a + (l.buyDiscardTotal ?? 0), 0));
   const discarding = all.filter((l) => l.wastePct > 0).length;
+  const notPurchaseForm = all.filter((l) => l.purchase || l.caution).length;
 
   return (
     <div className="order-view">
@@ -66,6 +68,11 @@ export default function OrderView({
         </button>
       </div>
       {servingsInvalid && <p className="weight-warning">1〜{MAX_SERVINGS}の整数で入力してください（{servings}人分で計算中）</p>}
+      {notPurchaseForm > 0 && (
+        <p className="order-summary-alert">
+          {notPurchaseForm}品目は、選んだ食品が調理・加工後の形です（めし・おろし・ゆで等）。発注量の列はその形の重さなので、各行の「買う形」「注意」を確認してください。
+        </p>
+      )}
 
       {rows.length === 0 ? (
         <p className="note">材料が入力されていません。</p>
@@ -124,10 +131,38 @@ export default function OrderView({
                               {l.wastePart ?? <span className="waste-none">部位は成分表に記載なし</span>}
                             </>
                           )}
+                          {l.purchase && (
+                            <div className="order-alert">
+                              <span className="order-alert-tag">買う形</span>選んだ食品は調理・加工後の重さのため、発注量は
+                              <b>{l.purchase.label}</b>
+                              に換算しています
+                              <div className="order-basis">根拠: {l.purchase.basis}</div>
+                            </div>
+                          )}
+                          {l.caution && (
+                            <div className="order-alert">
+                              <span className="order-alert-tag">注意</span>
+                              {l.caution}
+                            </div>
+                          )}
+                          {l.peelAlt && (
+                            <div className="order-hint">
+                              {l.peelAlt.label}の食品なら廃棄{l.peelAlt.wastePct}%
+                            </div>
+                          )}
                         </td>
-                        <td className="num col-order-total">{l.orderTotal}</td>
-                        <td className="num">{l.orderPerPerson}</td>
-                        <td className="num">{l.discardTotal}</td>
+                        <td className="num col-order-total">
+                          {l.buyTotal}
+                          {l.purchase && (
+                            <div className="order-form-note">
+                              {l.purchase.label.split(" ")[0]}で
+                              <br />
+                              （{l.orderTotal}）
+                            </div>
+                          )}
+                        </td>
+                        <td className="num">{l.buyPerPerson}</td>
+                        <td className="num">{l.buyDiscardTotal ?? "—"}</td>
                       </tr>
                     );
                   }),

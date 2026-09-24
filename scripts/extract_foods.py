@@ -33,6 +33,7 @@ TABLES = {
             "ca_mg": 25, "fe_mg": 28, "va_ugRAE": 42, "vd_ug": 43,
             "vb1_mg": 49, "vb2_mg": 50, "vc_mg": 58, "salt_g": 60,
         },
+        "note_col": 61,  # 備考。「廃棄部位： …」の行から廃棄部位を取り出す
     },
 }
 
@@ -56,7 +57,19 @@ def clean(v):
     return v
 
 
-def extract(version: str, xlsx: str, sheet: str, first_row: int, cols: dict) -> list:
+def waste_part(note) -> str | None:
+    """備考から「廃棄部位： 皮、へた」の「皮、へた」部分を取り出す（無ければ None）。"""
+    if not isinstance(note, str):
+        return None
+    m = re.search(r"廃棄部位\s*[：:]\s*([^\n]+)", note)
+    if m:
+        return m.group(1).strip()
+    # らっかせい等は「廃棄率： 殻 26 % 及び種皮 4 %」の形で部位ごとの内訳を書いている
+    m = re.search(r"廃棄率\s*[：:]\s*([^\n]+)", note)
+    return m.group(1).strip() if m else None
+
+
+def extract(version: str, xlsx: str, sheet: str, first_row: int, cols: dict, note_col: int) -> list:
     src = ROOT / "data" / "mext-tables" / version / "raw" / xlsx
     wb = openpyxl.load_workbook(src, read_only=True, data_only=True)
     ws = wb[sheet]
@@ -71,6 +84,8 @@ def extract(version: str, xlsx: str, sheet: str, first_row: int, cols: dict) -> 
                 f[key] = val
             else:
                 f[key] = clean(val)
+        # 可食部100g当たりで計算しているので、何を切り捨てた量なのか（廃棄部位）も持っておく
+        f["waste_part"] = waste_part(row[note_col])
         foods.append(f)
     return foods
 
@@ -83,7 +98,7 @@ def main():
     args = parser.parse_args()
 
     conf = TABLES[args.version]
-    foods = extract(args.version, args.xlsx or conf["xlsx"], conf["sheet"], conf["first_row"], conf["cols"])
+    foods = extract(args.version, args.xlsx or conf["xlsx"], conf["sheet"], conf["first_row"], conf["cols"], conf["note_col"])
 
     outs = [
         ROOT / "data" / "mext-tables" / args.version / "foods.json",

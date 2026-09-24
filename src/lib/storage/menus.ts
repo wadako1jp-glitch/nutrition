@@ -25,6 +25,7 @@ export interface StoredMenu {
   // 作成時の成分表の版（src/data/foodTable.ts の id）。食品番号の意味は版ごとに違い得るため、
   // 改訂版への切り替え時に「どの版の番号か」を判別できるよう記録しておく
   foodTable: string;
+  servings: number; // 発注量の人数（使用量は1人分として入力する）
   dishes: StoredDish[];
   rows: StoredMenuRow[];
   createdAt: number;
@@ -44,6 +45,7 @@ export function normalizeMenu(raw: unknown): StoredMenu {
     title: m.title ?? "",
     meal: isMeal(m.meal) ? m.meal : null,
     foodTable: typeof m.foodTable === "string" && m.foodTable ? m.foodTable : LEGACY_FOOD_TABLE_ID,
+    servings: typeof m.servings === "number" && Number.isInteger(m.servings) && m.servings >= 1 ? m.servings : 1,
     dishes,
     rows: (Array.isArray(m.rows) ? m.rows : []).map((r) => ({
       code: String(r.code),

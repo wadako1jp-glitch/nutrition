@@ -574,3 +574,22 @@ select.dish-chip.empty { border-style: dashed; color: #999; font-weight: 400; ba
   .worksheet-page .sheet .row-del-btn { width: 30px; height: 28px; }
   .worksheet-page .sheet input.num { width: 44px; font-size: 11px; }
 }
+
+/* --- 発注量の表示（src/features/order-quantity/OrderView.tsx） --- */
+.order-view { display: flex; flex-direction: column; gap: 10px; }
+.order-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.order-servings { display: flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 700; }
+.order-servings input.num {
+  width: 64px;
+  height: 36px;
+  border: 1px solid #999;
+  background: #fff;
+  font-size: 15px;
+  padding: 0 6px;
+}
+.worksheet-page .sheet .sheet-table.order-table .col-name { width: 34vw; min-width: 34vw; max-width: 34vw; white-space: normal; left: 0; }
+.order-table .col-waste-part { min-width: 7em; max-width: 12em; white-space: normal; text-align: left; font-size: 11px; line-height: 1.4; }
+.order-table .waste-pct { font-family: "IBM Plex Mono", Menlo, monospace; font-weight: 700; color: #a33; }
+.order-table .col-order-total { font-weight: 700; background: #fff8e1 !important; }
+.order-table .waste-none { color: #999; }
+.order-table .food-name { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; line-height: 16px; }

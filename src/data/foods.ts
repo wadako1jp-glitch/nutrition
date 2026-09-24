@@ -30,6 +30,7 @@ export interface Food {
   vb2_mg: Cell;
   vc_mg: Cell;
   salt_g: Cell;
+  waste_part?: string | null; // 廃棄部位（成分表の備考「廃棄部位：」）。発注量表示で何を切り捨てたかを示す
 }
 
 // Cell -> 計算に使える数値（Tr・推定値は0扱い、欠損はnull）

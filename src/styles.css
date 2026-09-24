@@ -72,6 +72,22 @@ body {
 .sheet-table thead .col-name { background: #e6e6e6; text-align: left; }
 .sheet-table tbody .col-name { font-size: 12px; padding: 6px; text-align: left; }
 .col-weight { min-width: 52px; border-right: 2px solid #222 !important; }
+/* 入力用の表（縦持ち）: 材料名列は画面幅の半分に固定し、長い食品名は2行まで折り返して末尾を省略する
+   （半分未満にすると読みづらく、3行以上になると一覧性が落ちるため）。全名は title で確認できる */
+.worksheet-page .sheet-table:not(.export-table) .col-name { width: 50vw; min-width: 50vw; max-width: 50vw; white-space: normal; }
+.name-cell { display: flex; align-items: center; gap: 4px; }
+.food-name {
+  flex: 1;
+  min-width: 0;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  line-height: 16px; /* 端数の行高さだと sticky 列の罫線が欠けて描画されるため整数で指定 */
+  overflow-wrap: anywhere;
+}
+.name-cell .dish-chip { flex: none; margin-left: 0; }
 
 .col-del { position: sticky; left: 0; z-index: 2; background: var(--row-bg, #fff); min-width: 34px; width: 34px; padding: 0 !important; text-align: center; }
 .sheet-table thead .col-del { background: #e6e6e6; }
@@ -547,7 +563,11 @@ select.dish-chip.empty { border-style: dashed; color: #999; font-weight: 400; ba
   .worksheet-page .sheet .sheet-table th,
   .worksheet-page .sheet .sheet-table td { padding: 3px; }
   .worksheet-page .sheet .sheet-table thead th { white-space: normal; font-size: 10px; min-width: 3.4em; }
-  .worksheet-page .sheet .sheet-table .col-name { min-width: 6em; white-space: normal; }
+  .worksheet-page .sheet .sheet-table .col-name { width: auto; min-width: 6em; max-width: none; white-space: normal; }
+  /* ワイド表示では従来どおり食品名とタグを1つの流れで折り返す（チップを右に分けると行数が増えるため） */
+  .worksheet-page .sheet .name-cell { display: block; }
+  .worksheet-page .sheet .food-name { display: inline; -webkit-line-clamp: unset; line-clamp: none; overflow: visible; }
+  .worksheet-page .sheet .name-cell .dish-chip { margin-left: 6px; }
   .worksheet-page .sheet .sheet-table tbody .col-name { font-size: 11px; padding: 3px 4px; }
   .worksheet-page .sheet .sheet-table .col-del { min-width: 30px; width: 30px; padding: 0 !important; }
   .worksheet-page .sheet .sheet-table .col-name { left: 30px; }

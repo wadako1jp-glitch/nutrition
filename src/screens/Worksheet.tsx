@@ -25,7 +25,8 @@ import {
   weightValue,
   weightWarningMessage,
 } from "../core/weightInput";
-import { StoredMenu, createMenuId, deleteMenu, getMenu, upsertMenu } from "../lib/storage/menus";
+import { StoredMenu, StoredMenuRow, createMenuId, deleteMenu, getMenu, upsertMenu } from "../lib/storage/menus";
+import { CURRENT_FOOD_TABLE } from "../data/foodTable";
 import { MEALS, Meal, guessMeal, menuDateStamp, menuTitle as buildMenuTitle } from "../core/menuTitle";
 import { getSettings, saveSettings } from "../lib/storage/settings";
 import { WIDE_QUERY, useMediaQuery } from "../hooks/useMediaQuery";
@@ -97,6 +98,11 @@ export default function Worksheet({
   // 既存献立として一度でも保存されたか。true になった後は材料0件になっても
   // （全消し＝更新）保存し続けないと、一覧に古い内容が残ったままになってしまう。
   const everSavedRef = useRef<boolean>(false);
+  // 献立を作成したときの成分表の版。開き直して保存しても書き換えない（改訂版への移行時に判別するため）
+  const foodTableRef = useRef<string>(CURRENT_FOOD_TABLE.id);
+  // 今の成分表に食品番号が見つからなかった行（版の切り替え後に起こり得る）。
+  // 表には出せないが、保存時にそのまま書き戻して献立データからは消さない
+  const [unresolvedRows, setUnresolvedRows] = useState<StoredMenuRow[]>([]);
 
   const [foods, setFoods] = useState<Food[] | null>(null);
   const [rows, setRows] = useState<Row[]>([]);
@@ -189,13 +195,17 @@ export default function Worksheet({
           everSavedRef.current = true;
           setMeal(stored.meal);
           setLegacyTitle(stored.title);
+          foodTableRef.current = stored.foodTable;
           setDishes(stored.dishes);
           const restored: Row[] = [];
+          const unresolved: StoredMenuRow[] = [];
           for (const r of stored.rows) {
             const food = findByCode(foods, r.code);
             if (food) restored.push({ id: nextRowId++, food, usedWeight: r.usedWeight, dishId: r.dishId });
+            else unresolved.push(r);
           }
           setRows(restored);
+          setUnresolvedRows(unresolved);
         }
       }
       if (!cancelled) setLoaded(true);
@@ -214,7 +224,7 @@ export default function Worksheet({
     if (!loaded) return;
     let cancelled = false;
     (async () => {
-      if (rows.length === 0) {
+      if (rows.length === 0 && unresolvedRows.length === 0) {
         if (everSavedRef.current) {
           await deleteMenu(stableIdRef.current);
           everSavedRef.current = false;
@@ -225,8 +235,12 @@ export default function Worksheet({
         id: stableIdRef.current,
         title: menuTitle || buildMenuTitle(createdAtRef.current, guessMeal(createdAtRef.current)),
         meal,
+        foodTable: foodTableRef.current,
         dishes,
-        rows: rows.map((r) => ({ code: r.food.code, usedWeight: r.usedWeight, dishId: r.dishId })),
+        rows: [
+          ...rows.map((r) => ({ code: r.food.code, usedWeight: r.usedWeight, dishId: r.dishId })),
+          ...unresolvedRows,
+        ],
         createdAt: createdAtRef.current,
         updatedAt: Date.now(),
       };
@@ -312,7 +326,7 @@ export default function Worksheet({
   function removeRow(id: number) {
     const nextRows = rows.filter((r) => r.id !== id);
     setRows(nextRows);
-    setDishes(pruneUnusedDishes(dishes, nextRows));
+    setDishes(pruneUnusedDishes(dishes, [...nextRows, ...unresolvedRows]));
   }
 
   // プルダウンの「＋自由入力…」。キャンセル・空欄なら null
@@ -341,7 +355,7 @@ export default function Worksheet({
     }
     const nextRows = rows.map((r) => (r.id === rowId ? { ...r, dishId } : r));
     setRows(nextRows);
-    setDishes(pruneUnusedDishes(nextDishes, nextRows));
+    setDishes(pruneUnusedDishes(nextDishes, [...nextRows, ...unresolvedRows]));
   }
 
   function setAddDish(value: string) {
@@ -479,6 +493,12 @@ export default function Worksheet({
             </div>
           </div>
 
+          {unresolvedRows.length > 0 && (
+            <p className="note unresolved-note">
+              現在の成分表「{CURRENT_FOOD_TABLE.label}」に見つからない食品が{unresolvedRows.length}件あるため、表に表示していません（食品番号:{" "}
+              {unresolvedRows.map((r) => r.code).join("、")}）。献立データには残っています。
+            </p>
+          )}
           <div className="sheet">
             <div className="sheet-scroll">
               <table className="sheet-table">
@@ -583,7 +603,7 @@ export default function Worksheet({
           </div>
 
           <p className="note">
-            八訂（増補2023）ベース・小数第1位で丸め。使用量＝実際に料理で使う可食部の重さとして計算します。行の削除は「×」で確認ポップアップが出ます。入力内容は自動的に保存されます。端末を横にする（画面幅が広い）と全項目を1画面に表示し、画面のタップでツールバー・材料追加を表示／非表示します。
+            {CURRENT_FOOD_TABLE.label}ベース・小数第1位で丸め。使用量＝実際に料理で使う可食部の重さとして計算します。行の削除は「×」で確認ポップアップが出ます。入力内容は自動的に保存されます。端末を横にする（画面幅が広い）と全項目を1画面に表示し、画面のタップでツールバー・材料追加を表示／非表示します。
           </p>
         </>
       )}
@@ -858,7 +878,7 @@ function ExportView({
           >
             <div className="export-head">
               <div className="export-title">{menuTitle || "（献立名未入力）"}</div>
-              <div className="export-date">{today} 作成・栄養計算アプリ（八訂 増補2023・計算上の目安）</div>
+              <div className="export-date">{today} 作成・栄養計算アプリ（{CURRENT_FOOD_TABLE.shortLabel}・計算上の目安）</div>
             </div>
 
             {rows.length === 0 ? (

@@ -1,15 +1,41 @@
-import json, re
+"""成分表（文科省配布のExcel）から、アプリが読む foods.json を作る。
+
+版ごとに data/mext-tables/<版>/raw/ に配布ファイルを置き、次のように実行する（引数なしは現行の八訂・増補2023）:
+
+    python3 scripts/extract_foods.py --version 2023_増補 \
+        --xlsx 20260327-mxt_kagsei-mext-000029402_02.xlsx --public-name foods.2023-zouho.json
+
+出力:
+  - data/mext-tables/<版>/foods.json   … 版ごとの保管用
+  - public/data/<public-name>          … アプリが実際に配信・読み込むファイル（src/data/foodTable.ts の file と揃える）
+
+改訂版で列の並びが変わった場合は COLS を版ごとに用意する。手順は docs/food-table-upgrade.md を参照。
+"""
+import argparse
+import json
+import re
+from pathlib import Path
+
 import openpyxl
 
-SRC = "data/mext-tables/2023_増補/raw/20260327-mxt_kagsei-mext-000029402_02.xlsx"
-OUT = "data/mext-tables/2023_増補/foods.json"
+ROOT = Path(__file__).resolve().parent.parent
 
-COLS = {
-    "group": 0, "code": 1, "index": 2, "name": 3, "waste_pct": 4,
-    "kcal": 6, "protein_g": 9, "fat_g": 12, "carb_g": 20, "fiber_g": 18,
-    "ca_mg": 25, "fe_mg": 28, "va_ugRAE": 42, "vd_ug": 43,
-    "vb1_mg": 49, "vb2_mg": 50, "vc_mg": 58, "salt_g": 60,
+# 版 -> 取り込み設定。シート名・見出し行数・列位置（0始まり）は配布ファイルの形式に合わせる
+TABLES = {
+    "2023_増補": {
+        "xlsx": "20260327-mxt_kagsei-mext-000029402_02.xlsx",
+        "public_name": "foods.2023-zouho.json",
+        "sheet": "表全体",
+        "first_row": 13,
+        "cols": {
+            "group": 0, "code": 1, "index": 2, "name": 3, "waste_pct": 4,
+            "kcal": 6, "protein_g": 9, "fat_g": 12, "carb_g": 20, "fiber_g": 18,
+            "ca_mg": 25, "fe_mg": 28, "va_ugRAE": 42, "vd_ug": 43,
+            "vb1_mg": 49, "vb2_mg": 50, "vc_mg": 58, "salt_g": 60,
+        },
+    },
 }
+
 
 def clean(v):
     if v is None:
@@ -29,29 +55,50 @@ def clean(v):
             return {"value": None, "flag": s}
     return v
 
-def main():
-    wb = openpyxl.load_workbook(SRC, read_only=True, data_only=True)
-    ws = wb["表全体"]
+
+def extract(version: str, xlsx: str, sheet: str, first_row: int, cols: dict) -> list:
+    src = ROOT / "data" / "mext-tables" / version / "raw" / xlsx
+    wb = openpyxl.load_workbook(src, read_only=True, data_only=True)
+    ws = wb[sheet]
     foods = []
-    for row in ws.iter_rows(min_row=13, values_only=True):
-        if row[COLS["code"]] is None:
+    for row in ws.iter_rows(min_row=first_row, values_only=True):
+        if row[cols["code"]] is None:
             continue
         f = {}
-        for key, idx in COLS.items():
+        for key, idx in cols.items():
             val = row[idx]
             if key in ("group", "code", "index", "name"):
                 f[key] = val
             else:
                 f[key] = clean(val)
         foods.append(f)
-    with open(OUT, "w", encoding="utf-8") as fp:
-        json.dump(foods, fp, ensure_ascii=False, indent=0)
-    print(f"wrote {len(foods)} foods -> {OUT}")
+    return foods
 
-    by_name = {f["name"]: f for f in foods}
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("--version", default="2023_増補", choices=sorted(TABLES))
+    parser.add_argument("--xlsx", help="raw/ 配下の配布Excelのファイル名（省略時は TABLES の既定値）")
+    parser.add_argument("--public-name", help="public/data/ に書き出すファイル名（省略時は TABLES の既定値）")
+    args = parser.parse_args()
+
+    conf = TABLES[args.version]
+    foods = extract(args.version, args.xlsx or conf["xlsx"], conf["sheet"], conf["first_row"], conf["cols"])
+
+    outs = [
+        ROOT / "data" / "mext-tables" / args.version / "foods.json",
+        ROOT / "public" / "data" / (args.public_name or conf["public_name"]),
+    ]
+    for out in outs:
+        out.parent.mkdir(parents=True, exist_ok=True)
+        with open(out, "w", encoding="utf-8") as fp:
+            json.dump(foods, fp, ensure_ascii=False, indent=0)
+        print(f"wrote {len(foods)} foods -> {out.relative_to(ROOT)}")
+
     for target in ["食塩", "上白糖", "調合油"]:
         hit = [f for f in foods if f["name"] == target]
         print(target, "->", hit[0] if hit else "NOT FOUND")
+
 
 if __name__ == "__main__":
     main()

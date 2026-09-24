@@ -74,6 +74,7 @@ describe("献立データの後方互換", () => {
       id: "m1",
       title: "献立1",
       meal: null,
+      foodTable: "2023_増補",
       dishes: [],
       rows: [{ code: "01083", usedWeight: "75", dishId: null }],
       createdAt: 1,

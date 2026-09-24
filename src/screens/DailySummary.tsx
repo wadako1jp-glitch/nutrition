@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { DRI_VERSION } from "../data/dri/2025";
+import { CURRENT_FOOD_TABLE } from "../data/foodTable";
 import { Food, findByCode, loadFoods } from "../data/foods";
 import { IntakeEvaluation, IntakeStatus, evaluateIntake, resolveReference } from "../core/intake";
 import { NUTRIENT_KEYS, NUTRIENT_LABELS, NutrientRow, computeRow, sumRows } from "../core/nutrition";
@@ -155,7 +156,7 @@ export default function DailySummary({
       )}
 
       <p className="note dri-note">
-        基準値は{DRI_VERSION}による。食事摂取基準（2025年版）は七訂成分表に基づいて策定されています。本アプリは八訂（増補2023）で計算しているため、エネルギーおよびエネルギー産生栄養素（たんぱく質・脂質・炭水化物）について、基準値との間に測定法由来の差が生じます。参考値として扱ってください。
+        基準値は{DRI_VERSION}による。食事摂取基準（2025年版）は七訂成分表に基づいて策定されています。本アプリは{CURRENT_FOOD_TABLE.label}で計算しているため、エネルギーおよびエネルギー産生栄養素（たんぱく質・脂質・炭水化物）について、基準値との間に測定法由来の差が生じます。参考値として扱ってください。
       </p>
     </div>
   );

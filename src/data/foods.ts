@@ -1,5 +1,7 @@
-// 成分表（八訂・増補2023）の読み込みと検索。
+// 成分表の読み込みと検索。どの版を読むかは src/data/foodTable.ts の CURRENT_FOOD_TABLE で決める。
 // docs/data-sources.md / CLAUDE.md「食品解決パイプライン」参照。
+
+import { CURRENT_FOOD_TABLE } from "./foodTable";
 
 export interface NumOrFlag {
   value: number | null;
@@ -41,7 +43,7 @@ let cache: Food[] | null = null;
 export async function loadFoods(): Promise<Food[]> {
   if (cache) return cache;
   // サブパス配信（例: pepstech.pw/nutrition/）でも解決できるよう BASE_URL を前置する
-  const res = await fetch(`${import.meta.env.BASE_URL}data/foods.2023-zouho.json`);
+  const res = await fetch(`${import.meta.env.BASE_URL}${CURRENT_FOOD_TABLE.file}`);
   const foods = (await res.json()) as Food[];
   cache = foods;
   return foods;

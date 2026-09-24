@@ -2,6 +2,7 @@
 // CLAUDE.md「技術スタック」参照。データ本体は食品コード＋使用量のみ持ち、食品名や成分値は
 // 読み込み時に成分表（src/data/foods.ts）から都度解決する（成分表の版が変わっても壊れない）。
 import { Meal, isMeal } from "../../core/menuTitle";
+import { LEGACY_FOOD_TABLE_ID } from "../../data/foodTable";
 import { storage } from "./index";
 
 export interface StoredMenuRow {
@@ -21,6 +22,9 @@ export interface StoredMenu {
   id: string;
   title: string; // 「yyyymmdd_朝食」形式（menuTitle で生成）。旧版の自由入力の献立名はそのまま残る
   meal: Meal | null; // 献立名の食事区分。null = 旧版の献立（自由入力の献立名）
+  // 作成時の成分表の版（src/data/foodTable.ts の id）。食品番号の意味は版ごとに違い得るため、
+  // 改訂版への切り替え時に「どの版の番号か」を判別できるよう記録しておく
+  foodTable: string;
   dishes: StoredDish[];
   rows: StoredMenuRow[];
   createdAt: number;
@@ -39,6 +43,7 @@ export function normalizeMenu(raw: unknown): StoredMenu {
     id: String(m.id),
     title: m.title ?? "",
     meal: isMeal(m.meal) ? m.meal : null,
+    foodTable: typeof m.foodTable === "string" && m.foodTable ? m.foodTable : LEGACY_FOOD_TABLE_ID,
     dishes,
     rows: (Array.isArray(m.rows) ? m.rows : []).map((r) => ({
       code: String(r.code),

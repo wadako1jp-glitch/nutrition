@@ -15,7 +15,7 @@
 3. `python3 scripts/extract_foods.py --version <版>` で JSON を作る
 4. `src/data/foodTable.ts` の `FOOD_TABLES` に版を追加し、`CURRENT_FOOD_TABLE` を切り替える
 5. 旧版と新版の食品番号を突き合わせ、**廃止・変更・意味が変わった番号**を洗い出す。必要なら旧→新の対応表を作り、読み込み時に置き換える
-6. 表記ゆれ辞書（`SYNONYMS` / `ROMAJI_ALIASES`）と `PRIORITY_CODES`（汎用食材の優先表示）を新しい食品名・番号で見直す
+6. 読み替え表（`src/data/foodAliases.ts`）・`ROMAJI_ALIASES`・`PRIORITY_CODES`（よく使う食材の優先表示）を新しい食品名・番号で見直す。`npm test` の検索テストが、当たらなくなった別名や食材を一覧で教えてくれる
 7. 食事摂取基準との関係の注記（`src/screens/DailySummary.tsx`）の文面が新しい版でも正しいか確認する
 8. テスト・スクショで確認し、PR → マージ（main へのマージで自動公開）
 

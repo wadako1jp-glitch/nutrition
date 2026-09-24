@@ -1,0 +1,28 @@
+# PR ごとにテストとビルド（型チェック込み）を回す。
+# 公開（deploy.yml）は main への push でだけ動くので、壊れた変更をマージ前に止めるのはこちらの役目。
+name: CI
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      # tsc -b（型チェック）→ vite build。PWA のプリキャッシュ生成もここで失敗すれば分かる
+      - run: npm run build

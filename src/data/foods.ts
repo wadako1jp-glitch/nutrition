@@ -1,6 +1,7 @@
 // 成分表の読み込みと検索。どの版を読むかは src/data/foodTable.ts の CURRENT_FOOD_TABLE で決める。
 // docs/data-sources.md / CLAUDE.md「食品解決パイプライン」参照。
 
+import { FOOD_ALIASES } from "./foodAliases";
 import { CURRENT_FOOD_TABLE } from "./foodTable";
 
 export interface NumOrFlag {
@@ -94,65 +95,66 @@ function halfKanaToFullKana(s: string): string {
   return out;
 }
 
-export function normalizeKana(s: string): string {
-  // 全角英数字→半角、半角カナ→全角カナ、そのうえで全角/半角スペース除去・記号除去。
-  const widthNormalized = halfKanaToFullKana(toHalfWidthAscii(s));
-  return widthNormalized.replace(/[　\s・（）()［］\[\]<>＜＞]/g, "");
+// カタカナ -> ひらがな。「ニンジン」「にんじん」、成分表の「キャベツ」と入力の「きゃべつ」を同じに扱う。
+// 長音「ー」はそのまま残す（成分表もかな表記の中で「ー」を使っているため）。
+export function katakanaToHiragana(s: string): string {
+  return s.replace(/[ァ-ヶ]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0x60));
 }
 
-// 学生が書く一般名 -> 成分表の公式表記語（docs/data-sources.md 検証結果2）
-export const SYNONYMS: Record<string, string> = {
-  濃口醤油: "こいくちしょうゆ",
-  濃口しょうゆ: "こいくちしょうゆ",
-  薄口醤油: "うすくちしょうゆ",
-  薄口しょうゆ: "うすくちしょうゆ",
-  牛: "うし",
-  豚: "ぶた",
-  鶏: "にわとり",
-  生姜: "しょうが",
-  大根: "だいこん",
-  人参: "にんじん",
-  玉葱: "たまねぎ",
-  玉ねぎ: "たまねぎ",
-  葱: "ねぎ",
-  馬鈴薯: "じゃがいも",
-  南瓜: "かぼちゃ",
-  牛蒡: "ごぼう",
-  筍: "たけのこ",
-  椎茸: "しいたけ",
-  蒟蒻: "こんにゃく",
-  白菜: "はくさい",
-  胡瓜: "きゅうり",
-  茄子: "なす",
-  片栗粉: "じゃがいもでん粉",
-  // 以下、実データで「生のまま検索しても一致しない」ことを確認した一般名 -> 実際に成分表の名称に
-  // 含まれる語への変換（要件「予想変換の拡充」）。単純に漢字をひらがなに開くだけでは足りず、
-  // 「肉」「粉」等の接尾辞が成分表側の名称と噛み合わないケースを個別に補っている。
-  豚肉: "ぶた",
-  鶏肉: "にわとり",
-  牛肉: "うし",
-  厚揚げ: "生揚げ",
-  枝豆: "えだまめ",
-  生クリーム: "クリーム",
-  ごはん: "めし",
-  ご飯: "めし",
-  餃子: "ぎょうざ",
-  こむぎ粉: "小麦粉",
-  ちくわ: "竹輪",
-};
+// 検索用の正規化（空白は残す）: 全角英数字→半角、半角カナ→全角カナ、カタカナ→ひらがな、記号除去。
+function normalizeKeepSpaces(s: string): string {
+  const widthNormalized = halfKanaToFullKana(toHalfWidthAscii(s));
+  return katakanaToHiragana(widthNormalized).replace(/[・（）()［］\[\]<>＜＞]/g, "");
+}
 
-function applySynonyms(term: string): string {
-  let t = term;
-  for (const [from, to] of Object.entries(SYNONYMS)) {
-    t = t.split(from).join(to);
+export function normalizeKana(s: string): string {
+  // 検索用の正規化に加えて、全角/半角スペースも除去する（食品名側・1語ぶんのクエリ用）。
+  return normalizeKeepSpaces(s).replace(/[　\s]/g, "");
+}
+
+// 読み替え表（src/data/foodAliases.ts）を「正規化した別名 -> 正規化した呼び名の語の並び」にしたもの。
+// 別名は長い順に並べ、クエリの左から最長一致で1回だけ読み替える。
+// （以前は辞書を定義順に全部適用していたため、「鶏→にわとり」が先に当たって「鶏肉」が
+//   「にわとり肉」になり、どの食品にも一致しなかった）
+const ALIAS_MAP = new Map<string, string[]>();
+const ALIAS_ENTRIES: [string, string[]][] = (() => {
+  const map = ALIAS_MAP;
+  for (const [target, forms] of Object.entries(FOOD_ALIASES)) {
+    const words = target.split(/\s+/).map(normalizeKana).filter(Boolean);
+    for (const form of forms) {
+      const key = normalizeKana(form);
+      if (key && !map.has(key)) map.set(key, words);
+    }
   }
-  return t;
+  return [...map.entries()].sort((a, b) => b[0].length - a[0].length);
+})();
+
+// 1語（空白を含まない正規化済みの語）を読み替えて、食品名に含まれているべき語の並びにする。
+// 読み替えの当たらなかった部分はそのまま1語として残す（「豚ロース」→「ぶた」「ろーす」）。
+export function expandAliases(word: string): string[] {
+  const out: string[] = [];
+  let rest = "";
+  let i = 0;
+  while (i < word.length) {
+    const hit = ALIAS_ENTRIES.find(([key]) => word.startsWith(key, i));
+    if (hit) {
+      if (rest) out.push(rest);
+      rest = "";
+      out.push(...hit[1]);
+      i += hit[0].length;
+    } else {
+      rest += word[i];
+      i++;
+    }
+  }
+  if (rest) out.push(rest);
+  return out;
 }
 
 // --- 汎用食材（どの料理にも使われやすい調味料・卵など）のローマ字入力対応 ---
 // 要件: 「塩やみそなどの調味料や卵などの汎用食材」をあいまい検索（ローマ字入力含む）できるようにする。
 // キーはローマ字（小文字・記号除去後）、値は成分表の名称に実際に含まれる語（漢字/かな/カタカナ）。
-// 既存の表記ゆれ辞書（SYNONYMS）・かな正規化（normalizeKana）にそのまま乗せて検索する。
+// 読み替え表（FOOD_ALIASES）・かな正規化（normalizeKana）にそのまま乗せて検索する。
 export const ROMAJI_ALIASES: Record<string, string> = {
   shio: "食塩",
   sio: "食塩",
@@ -326,6 +328,38 @@ export const PRIORITY_CODES: ReadonlySet<string> = new Set([
   "17042", // マヨネーズ
   "17036", // ケチャップ
   "14006", // 調合油（サラダ油）
+  // 調理実習でよく使う食材の代表的な1品（「鶏肉」「豆腐」のような大まかな語で、内臓や加工品より先に出す）
+  "11221", // にわとり 若どり もも 皮つき 生
+  "11219", // にわとり 若どり むね 皮つき 生
+  "11227", // にわとり 若どり ささみ 生
+  "11230", // にわとり ひき肉 生
+  "11123", // ぶた 大型種 ロース 脂身つき 生
+  "11129", // ぶた 大型種 ばら 脂身つき 生
+  "11163", // ぶた ひき肉 生
+  "11034", // うし 乳用肥育 かたロース 脂身つき 生
+  "11046", // うし 乳用肥育 ばら 脂身つき 生
+  "11089", // うし ひき肉 生
+  "10134", // しろさけ 生
+  "10154", // まさば 生
+  "10263", // まぐろ 缶詰 油漬 フレーク ライト（ツナ缶）
+  "10381", // 焼き竹輪
+  "01088", // 精白米 めし
+  "01026", // 角形食パン
+  "01039", // うどん ゆで
+  "01047", // 中華めん 生
+  "01015", // 薄力粉 1等
+  "04032", // 木綿豆腐
+  "04033", // 絹ごし豆腐
+  "04039", // 生揚げ
+  "04040", // 油揚げ 生
+  "04046", // 糸引き納豆
+  "02017", // じゃがいも 皮なし 生
+  "06153", // たまねぎ 生
+  "06214", // にんじん 皮なし 生
+  "06061", // キャベツ 生
+  "06134", // だいこん 皮なし 生
+  "06226", // 根深ねぎ 生
+  "06267", // ほうれんそう 生
 ]);
 
 // ローマ字クエリを成分表側の語に変換する。完全一致優先、無ければ前方一致で拾う（入力途中でも候補を出す）。
@@ -339,6 +373,25 @@ function resolveRomaji(rawQuery: string): string | undefined {
     if (k.startsWith(key)) return ROMAJI_ALIASES[k];
   }
   return undefined;
+}
+
+// 食品名の正規化はキー入力のたびに全件ぶん繰り返すと重いので、食品ごとに1回だけ計算して覚えておく
+// full: 食品名全体 / core: 分類の見出し（＜鳥肉類＞・（まぐろ類）・［豆腐・油揚げ類］など）を除いた部分
+interface NormalizedName {
+  full: string;
+  core: string;
+}
+const normalizedNames = new WeakMap<Food, NormalizedName>();
+function normalizedName(food: Food): NormalizedName {
+  let n = normalizedNames.get(food);
+  if (n === undefined) {
+    n = {
+      full: normalizeKana(food.name),
+      core: normalizeKana(food.name.replace(/＜[^＞]*＞|（[^）]*）|［[^］]*］/g, " ")),
+    };
+    normalizedNames.set(food, n);
+  }
+  return n;
 }
 
 export interface SearchResult {
@@ -367,17 +420,44 @@ export function searchFoods(foods: Food[], query: string, limit = Infinity): Sea
     }
   }
 
-  // 名称のあいまい検索（かな・漢字・カタカナ・ローマ字）
+  // 名称のあいまい検索（かな・漢字・カタカナ・ローマ字）。
+  // 空白で区切った語ごとに、「そのままの語」か「読み替えた語の並びをすべて」含む食品を探す
+  // （「鶏卵」はそのまま、「鶏もも」は「にわとり」「もも」の両方を含む食品に当たる）。
   const romajiTerm = resolveRomaji(trimmed);
   const effectiveQuery = romajiTerm ?? trimmed;
-  const q = normalizeKana(applySynonyms(effectiveQuery));
-  if (q) {
+  const terms = normalizeKeepSpaces(effectiveQuery)
+    .split(/[　\s]+/)
+    .filter(Boolean)
+    .map((word) => {
+      // exact: 語全体がそのまま読み替え表の別名（「鶏肉」「ツナ」など）。このときは読み替え先での一致を優先する。
+      // そうでない語（「牛乳」→「うし」「乳」のように一部だけ読み替わる語）は文字どおりの一致を優先する
+      return { word, expanded: expandAliases(word), exact: ALIAS_MAP.has(word) };
+    });
+  if (terms.length) {
     for (const food of foods) {
       if (seen.has(food.code)) continue;
-      const nname = normalizeKana(food.name);
-      if (nname.includes(q)) {
+      const { full: nname, core } = normalizedName(food);
+      let penalty = 0;
+      let hit = true;
+      for (const { word, expanded, exact } of terms) {
+        const literal = nname.includes(word);
+        const aliased = expanded.every((w) => nname.includes(w));
+        if (!literal && !aliased) {
+          hit = false;
+          break;
+        }
+        // 優先しない側でしか当たらない食品は後ろに回す。例: 「鳥肉」が「＜鳥肉類＞かも」に、
+        // 「ツナ」が「こまつな」に文字どおり当たる／「牛乳」が「うし［乳用肥育牛肉］」に読み替えで当たる
+        if (exact ? !aliased : !literal) penalty += 1000;
+        // 分類の見出しにしか出てこない語で当たった食品も後ろに回す（「豆腐」で［豆腐・油揚げ類］の生揚げが先に出ないように）
+        const inCore = core.includes(word) || expanded.every((w) => core.includes(w));
+        if (!inCore) penalty += 500;
+        // 逆に「（いか類）」のように語そのものが分類名になっている食品は前に出す（「いか」で「すいか」より先に）
+        if (nname.includes(`${word}類`)) penalty -= 300;
+      }
+      if (hit) {
         const boost = PRIORITY_CODES.has(food.code) ? -100000 : 0;
-        results.push({ food, score: boost + nname.length });
+        results.push({ food, score: boost + penalty + nname.length });
         seen.add(food.code);
       }
     }

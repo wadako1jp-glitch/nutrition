@@ -27,6 +27,7 @@ import {
 } from "../core/weightInput";
 import { StoredMenu, StoredMenuRow, createMenuId, deleteMenu, getMenu, upsertMenu } from "../lib/storage/menus";
 import { CURRENT_FOOD_TABLE } from "../data/foodTable";
+import OrderView from "../features/order-quantity/OrderView";
 import { MEALS, Meal, guessMeal, menuDateStamp, menuTitle as buildMenuTitle } from "../core/menuTitle";
 import { getSettings, saveSettings } from "../lib/storage/settings";
 import { WIDE_QUERY, useMediaQuery } from "../hooks/useMediaQuery";
@@ -107,6 +108,8 @@ export default function Worksheet({
   const [foods, setFoods] = useState<Food[] | null>(null);
   const [rows, setRows] = useState<Row[]>([]);
   const [exportMode, setExportMode] = useState(false);
+  const [orderMode, setOrderMode] = useState(false); // 発注量の表示（材料表の代わりに出す）
+  const [servings, setServings] = useState(1); // 発注量の人数
   // 献立名は「yyyymmdd_朝食」固定形式。日付は作成日、区分だけプルダウンで選ぶ（新規は時刻から推定）
   const [meal, setMeal] = useState<Meal | null>(() => (menuId ? null : guessMeal(createdAtRef.current)));
   const [legacyTitle, setLegacyTitle] = useState(""); // 旧版で自由入力された献立名（区分を選ぶまでそのまま使う）
@@ -164,7 +167,7 @@ export default function Worksheet({
   function handlePageClick(e: ReactMouseEvent<HTMLDivElement>) {
     if (!wide) return;
     const target = e.target as HTMLElement;
-    if (target.closest("button, input, select, textarea, label, a, .topbar, .add-card, .confirm-overlay, .export-overlay")) return;
+    if (target.closest("button, input, select, textarea, label, a, .topbar, .add-card, .confirm-overlay, .export-overlay, .order-view")) return;
     setChromeShown((v) => !v);
   }
 
@@ -196,6 +199,7 @@ export default function Worksheet({
           setMeal(stored.meal);
           setLegacyTitle(stored.title);
           foodTableRef.current = stored.foodTable;
+          setServings(stored.servings);
           setDishes(stored.dishes);
           const restored: Row[] = [];
           const unresolved: StoredMenuRow[] = [];
@@ -236,6 +240,7 @@ export default function Worksheet({
         title: menuTitle || buildMenuTitle(createdAtRef.current, guessMeal(createdAtRef.current)),
         meal,
         foodTable: foodTableRef.current,
+        servings,
         dishes,
         rows: [
           ...rows.map((r) => ({ code: r.food.code, usedWeight: r.usedWeight, dishId: r.dishId })),
@@ -251,7 +256,7 @@ export default function Worksheet({
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rows, dishes, menuTitle, loaded]);
+  }, [rows, dishes, menuTitle, servings, loaded]);
 
   useEffect(() => {
     setSuggestLimit(SUGGEST_PAGE_SIZE);
@@ -393,6 +398,11 @@ export default function Worksheet({
             ))}
           </select>
         </span>
+        {!orderMode && (
+          <button type="button" className="mode-toggle" onClick={() => setOrderMode(true)}>
+            発注量
+          </button>
+        )}
         <button type="button" className="mode-toggle" onClick={() => setExportMode((v) => !v)}>
           {exportMode ? "編集に戻る" : "画像用表示"}
         </button>
@@ -407,6 +417,14 @@ export default function Worksheet({
           totalWeight={totalWeight}
           menuTitle={menuTitle}
           onClose={() => setExportMode(false)}
+        />
+      ) : orderMode ? (
+        <OrderView
+          rows={rows}
+          dishes={dishes}
+          servings={servings}
+          onServingsChange={setServings}
+          onClose={() => setOrderMode(false)}
         />
       ) : (
         <>

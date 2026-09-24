@@ -67,8 +67,8 @@ export function sumRows(rows: NutrientRow[]): NutrientRow {
   return sum;
 }
 
-// 廃棄率ルール: 仕入れ量 = 使用量 ÷ (1 − 廃棄率)
+// 廃棄率ルール: 仕入れ量（発注量） = 使用量 ÷ (1 − 廃棄率)。発注量表示（src/core/order.ts）で使う
 export function purchaseWeight(usedWeightG: number, wastePct: number): number {
-  if (!wastePct) return usedWeightG;
+  if (!wastePct) return round1(usedWeightG);
   return round1(usedWeightG / (1 - wastePct / 100));
 }

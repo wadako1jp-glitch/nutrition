@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { KeyboardEvent as ReactKeyboardEvent, PointerEvent as ReactPointerEvent } from "react";
 import {
   Food,
@@ -269,6 +269,7 @@ export default function Worksheet({
           subtotal={subtotal}
           totalWeight={totalWeight}
           menuTitle={menuTitle}
+          onClose={() => setExportMode(false)}
         />
       ) : (
         <>
@@ -470,36 +471,144 @@ export default function Worksheet({
   );
 }
 
-// 画像用表示（画面表示）／提出用エクスポート。どちらも同じ、入力用の表とほぼ同じ見た目の
-// 「栄養価計算用紙」形式の表で統一する（先生に提出できる体裁＝スクリーンショットでそのままLINE/メール共有できる形）。
+// 画像用表示の拡大上限（材料が少ないときに文字が巨大になりすぎないように）
+const EXPORT_MAX_SCALE = 3;
+const EXPORT_CONTROLS_HIDE_MS = 2500;
+
+interface ExportLayout {
+  w: number; // 横長ステージの幅（回転後の見た目基準）
+  h: number;
+  rotated: boolean; // 縦持ちのとき中身を90°回して横長で見せる
+  scale: number;
+  cw: number; // 表示内容の素の大きさ
+  ch: number;
+}
+
+// 画像用表示：入力用の表と同じ「栄養価計算用紙」形式の表を、横長・全画面・スクロール無しで1画面に収める。
+// 端末の表示領域を測って縮尺を決めるので、スクリーンショット1枚で献立全体が写る。
+// 縦持ちなら中身を90°回転して横長にする（iPhoneは向きの固定・全画面APIが使えないため）。
 function ExportView({
   rows,
   nutrientRows,
   subtotal,
   totalWeight,
   menuTitle,
+  onClose,
 }: {
   rows: Row[];
   nutrientRows: NutrientRow[];
   subtotal: NutrientRow;
   totalWeight: number;
   menuTitle: string;
+  onClose: () => void;
 }) {
   const today = new Date().toLocaleDateString("ja-JP", { year: "numeric", month: "long", day: "numeric" });
+  const frameRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [layout, setLayout] = useState<ExportLayout | null>(null);
+  const [controlsVisible, setControlsVisible] = useState(true);
+
+  // 全画面化・横向き固定（対応端末のみ。Android Chrome等）。非対応でも回転表示で横長になる。
+  useEffect(() => {
+    const el = document.documentElement;
+    (async () => {
+      try {
+        if (el.requestFullscreen && !document.fullscreenElement) await el.requestFullscreen({ navigationUI: "hide" });
+      } catch {
+        /* 非対応・拒否は無視 */
+      }
+      try {
+        await (screen.orientation as ScreenOrientation & { lock?: (o: string) => Promise<void> }).lock?.("landscape");
+      } catch {
+        /* 非対応・拒否は無視 */
+      }
+    })();
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prevOverflow;
+      try {
+        screen.orientation?.unlock?.();
+      } catch {
+        /* noop */
+      }
+      if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // 表示領域と内容の大きさを測って、回転の要否と縮尺を決める
+  useLayoutEffect(() => {
+    const frame = frameRef.current;
+    const content = contentRef.current;
+    if (!frame || !content) return;
+    const update = () => {
+      const fw = frame.clientWidth;
+      const fh = frame.clientHeight;
+      const rotated = fh > fw;
+      const w = rotated ? fh : fw;
+      const h = rotated ? fw : fh;
+      const cw = content.offsetWidth;
+      const ch = content.offsetHeight;
+      if (!w || !h || !cw || !ch) return;
+      setLayout({ w, h, rotated, cw, ch, scale: Math.min(w / cw, h / ch, EXPORT_MAX_SCALE) });
+    };
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(frame);
+    ro.observe(content);
+    return () => ro.disconnect();
+  }, []);
+
+  // 操作ボタンはスクショに写らないよう数秒で隠す（画面タップで再表示）
+  useEffect(() => {
+    if (!controlsVisible) return;
+    const t = window.setTimeout(() => setControlsVisible(false), EXPORT_CONTROLS_HIDE_MS);
+    return () => window.clearTimeout(t);
+  }, [controlsVisible]);
 
   return (
-    <div className="export-view">
-      <div className="export-head">
-        <div className="export-title">{menuTitle || "（献立名未入力）"}</div>
-        <div className="export-date">{today} 作成・栄養計算アプリ</div>
-      </div>
+    <div className="export-overlay" onClick={() => setControlsVisible((v) => !v)}>
+      <div className="export-frame" ref={frameRef}>
+        <div
+          className="export-stage"
+          style={
+            layout
+              ? {
+                  width: layout.w,
+                  height: layout.h,
+                  transform: `translate(-50%, -50%)${layout.rotated ? " rotate(90deg)" : ""}`,
+                }
+              : { visibility: "hidden" }
+          }
+        >
+          <div
+            className="export-content"
+            ref={contentRef}
+            style={
+              layout
+                ? {
+                    left: (layout.w - layout.cw * layout.scale) / 2,
+                    top: (layout.h - layout.ch * layout.scale) / 2,
+                    transform: `scale(${layout.scale})`,
+                  }
+                : undefined
+            }
+          >
+            <div className="export-head">
+              <div className="export-title">{menuTitle || "（献立名未入力）"}</div>
+              <div className="export-date">{today} 作成・栄養計算アプリ（八訂 増補2023・計算上の目安）</div>
+            </div>
 
-      {rows.length === 0 ? (
-        <p className="note">材料が入力されていません。</p>
-      ) : (
-        <div className="sheet export-sheet">
-          <div className="sheet-scroll">
-            <table className="sheet-table export-table">
+            {rows.length === 0 ? (
+              <p className="note">材料が入力されていません。</p>
+            ) : (
+              <table className="sheet-table export-table">
               <thead>
                 <tr>
                   <th className="col-name">材料名</th>
@@ -542,13 +651,24 @@ function ExportView({
                 </tr>
               </tbody>
             </table>
+            )}
+          </div>
+
+          <div className={`export-controls${controlsVisible ? "" : " hidden"}`}>
+            <span className="export-hint">画面をタップでボタン表示／非表示</span>
+            <button
+              type="button"
+              className="mode-toggle"
+              onClick={(e) => {
+                e.stopPropagation();
+                onClose();
+              }}
+            >
+              編集に戻る
+            </button>
           </div>
         </div>
-      )}
-
-      <p className="note">
-        八訂（増補2023）ベースの計算上の目安です。スクリーンショットして提出・共有にご利用ください。
-      </p>
+      </div>
     </div>
   );
 }

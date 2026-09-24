@@ -55,7 +55,7 @@ export default function MenuList({
         <button type="button" className="mode-toggle" onClick={onCreate}>
           ＋新しい献立
         </button>
-        <button type="button" className="back-btn" onClick={onOpenProfile} aria-label="プロフィール設定" title="プロフィール設定">
+        <button type="button" className="back-btn" onClick={onOpenProfile} aria-label="プロフィール・設定" title="プロフィール・設定">
           ⚙
         </button>
       </header>

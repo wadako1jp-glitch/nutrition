@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { toBlob } from "html-to-image";
 import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent, PointerEvent as ReactPointerEvent } from "react";
 import {
   Dish,
@@ -24,7 +25,9 @@ import {
   weightValue,
   weightWarningMessage,
 } from "../core/weightInput";
-import { StoredMenu, createMenuId, deleteMenu, getMenu, nextDefaultTitle, upsertMenu } from "../lib/storage/menus";
+import { StoredMenu, createMenuId, deleteMenu, getMenu, upsertMenu } from "../lib/storage/menus";
+import { MEALS, Meal, guessMeal, menuDateStamp, menuTitle as buildMenuTitle } from "../core/menuTitle";
+import { getSettings, saveSettings } from "../lib/storage/settings";
 
 const COLUMN_LABELS = NUTRIENT_LABELS;
 
@@ -35,10 +38,12 @@ interface Row {
   id: number;
   food: Food; // カードで確定済みの食品。一覧に乗る行は常に確定済み
   usedWeight: string; // 使用量(g)＝料理で使う可食部の重さ。栄養計算もこの値をそのまま使う。
-  dishId: string | null; // 食事区分。null = 区分なし
+  dishId: string | null; // 料理タグ。null = 未割当
 }
 
-// 食事区分のプルダウン（材料追加欄と各材料行で共通）。朝食・昼食・夕食・間食のみ（自由入力なし）。
+const CUSTOM_DISH = "__custom__";
+
+// 料理タグのプルダウン（材料追加欄と各材料行で共通）。プリセット＋この献立で作った自由入力タグ。
 function DishSelect({
   dishes,
   value,
@@ -57,7 +62,7 @@ function DishSelect({
   onChange: (value: string) => void;
 }) {
   const names = dishOptionNames(dishes);
-  if (value && !names.includes(value)) names.push(value); // 旧版で付けたタグ（主食など）を引き継いでいる場合
+  if (value && !names.includes(value)) names.push(value); // 引き継ぎ中の自由入力タグ
   return (
     <select className={className} style={style} aria-label={ariaLabel} value={value ?? ""} onChange={(e) => onChange(e.target.value)}>
       <option value="">{emptyLabel}</option>
@@ -66,6 +71,7 @@ function DishSelect({
           {n}
         </option>
       ))}
+      <option value={CUSTOM_DISH}>＋自由入力…</option>
     </select>
   );
 }
@@ -86,7 +92,6 @@ export default function Worksheet({
 }) {
   const stableIdRef = useRef<string>(menuId ?? createMenuId());
   const createdAtRef = useRef<number>(Date.now());
-  const defaultTitleRef = useRef<string | null>(null);
   // 既存献立として一度でも保存されたか。true になった後は材料0件になっても
   // （全消し＝更新）保存し続けないと、一覧に古い内容が残ったままになってしまう。
   const everSavedRef = useRef<boolean>(false);
@@ -94,11 +99,16 @@ export default function Worksheet({
   const [foods, setFoods] = useState<Food[] | null>(null);
   const [rows, setRows] = useState<Row[]>([]);
   const [exportMode, setExportMode] = useState(false);
-  const [menuTitle, setMenuTitle] = useState("");
+  // 献立名は「yyyymmdd_朝食」固定形式。日付は作成日、区分だけプルダウンで選ぶ（新規は時刻から推定）
+  const [meal, setMeal] = useState<Meal | null>(() => (menuId ? null : guessMeal(createdAtRef.current)));
+  const [legacyTitle, setLegacyTitle] = useState(""); // 旧版で自由入力された献立名（区分を選ぶまでそのまま使う）
+  const menuTitle = meal ? buildMenuTitle(createdAtRef.current, meal) : legacyTitle;
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
+  const [skipDeleteConfirm, setSkipDeleteConfirm] = useState(false); // 設定: 材料を確認なしで連続削除
+  const [dontAskAgain, setDontAskAgain] = useState(false); // 削除確認の「次から確認しない」チェック
   const [loaded, setLoaded] = useState(false);
 
-  // --- 食事区分（プルダウンで選んだ時点で作られ、使われなくなったら消える） ---
+  // --- 料理タグ（プルダウンで選んだ時点で作られ、使われなくなったら消える） ---
   const [dishes, setDishes] = useState<Dish[]>([]);
   const [addDishName, setAddDishName] = useState<string | null>(null); // 次に追加する材料のタグ（直前の選択を引き継ぐ）
 
@@ -116,7 +126,18 @@ export default function Worksheet({
 
   useEffect(() => {
     loadFoods().then(setFoods);
+    getSettings().then((s) => setSkipDeleteConfirm(s.skipRowDeleteConfirm));
   }, []);
+
+  // ×ボタン・長押しからの削除要求。設定で確認を省略していれば即削除する
+  function requestDeleteRow(id: number) {
+    if (skipDeleteConfirm) {
+      removeRow(id);
+      return;
+    }
+    setDontAskAgain(false);
+    setConfirmDeleteId(id);
+  }
 
   // 既存献立の読み込み（成分表のロード完了後に、食品コード→Foodを解決してから行を復元する）
   useEffect(() => {
@@ -128,7 +149,8 @@ export default function Worksheet({
         if (!cancelled && stored) {
           createdAtRef.current = stored.createdAt;
           everSavedRef.current = true;
-          setMenuTitle(stored.title);
+          setMeal(stored.meal);
+          setLegacyTitle(stored.title);
           setDishes(stored.dishes);
           const restored: Row[] = [];
           for (const r of stored.rows) {
@@ -161,17 +183,10 @@ export default function Worksheet({
         }
         return;
       }
-      let title = menuTitle.trim();
-      if (!title) {
-        if (!defaultTitleRef.current) {
-          defaultTitleRef.current = await nextDefaultTitle();
-        }
-        title = defaultTitleRef.current;
-        if (!cancelled) setMenuTitle(title);
-      }
       const stored: StoredMenu = {
         id: stableIdRef.current,
-        title,
+        title: menuTitle || buildMenuTitle(createdAtRef.current, guessMeal(createdAtRef.current)),
+        meal,
         dishes,
         rows: rows.map((r) => ({ code: r.food.code, usedWeight: r.usedWeight, dishId: r.dishId })),
         createdAt: createdAtRef.current,
@@ -262,9 +277,22 @@ export default function Worksheet({
     setDishes(pruneUnusedDishes(dishes, nextRows));
   }
 
-  // 食事区分のプルダウンの値（"" = 区分なし）
+  // プルダウンの「＋自由入力…」。キャンセル・空欄なら null
+  function promptCustomDishName(): string | null {
+    const name = window.prompt("料理タグ名を入力（例：小鉢、飲み物）")?.trim();
+    return name ? name : null;
+  }
+
+  // タグのプルダウンの値（"" = タグなし、CUSTOM_DISH = 自由入力）をタグ名に解決する。undefined = 変更しない
+  function resolveDishSelection(value: string): string | null | undefined {
+    if (value === "") return null;
+    if (value === CUSTOM_DISH) return promptCustomDishName() ?? undefined;
+    return value;
+  }
+
   function setRowDish(rowId: number, value: string) {
-    const name = value || null;
+    const name = resolveDishSelection(value);
+    if (name === undefined) return;
     let nextDishes = dishes;
     let dishId: string | null = null;
     if (name !== null) {
@@ -279,7 +307,8 @@ export default function Worksheet({
   }
 
   function setAddDish(value: string) {
-    setAddDishName(value || null);
+    const name = resolveDishSelection(value);
+    if (name !== undefined) setAddDishName(name);
   }
 
   function clearLongPressTimer() {
@@ -297,7 +326,7 @@ export default function Worksheet({
     clearLongPressTimer();
     longPressTimerRef.current = window.setTimeout(() => {
       longPressTimerRef.current = null;
-      setConfirmDeleteId(id);
+      requestDeleteRow(id);
     }, LONG_PRESS_MS);
     try {
       e.currentTarget.setPointerCapture?.(e.pointerId);
@@ -316,18 +345,23 @@ export default function Worksheet({
         <button type="button" className="back-btn" onClick={onBack} aria-label="一覧に戻る">
           ←
         </button>
-        {exportMode ? (
-          <span className="menu-title-view">{menuTitle || "（献立名未入力）"}</span>
-        ) : (
-          <span
-            className="menu-title-input"
-            contentEditable
-            suppressContentEditableWarning
-            onBlur={(e) => setMenuTitle(e.currentTarget.textContent || "")}
+        {/* 献立名: 日付（作成日）は固定表示、区分だけ選ぶ */}
+        <span className="menu-title-input" title={menuTitle}>
+          <span className="menu-title-date">{menuDateStamp(createdAtRef.current)}_</span>
+          <select
+            className="menu-title-meal"
+            aria-label="献立名の食事区分"
+            value={meal ?? ""}
+            onChange={(e) => setMeal((e.target.value || null) as Meal | null)}
           >
-            {menuTitle || "（献立名を入力）"}
-          </span>
-        )}
+            {meal === null && <option value="">{legacyTitle ? `（旧: ${legacyTitle}）` : "区分を選択"}</option>}
+            {MEALS.map((m) => (
+              <option key={m} value={m}>
+                {m}
+              </option>
+            ))}
+          </select>
+        </span>
         <button type="button" className="mode-toggle" onClick={() => setExportMode((v) => !v)}>
           {exportMode ? "編集に戻る" : "画像用表示"}
         </button>
@@ -416,10 +450,10 @@ export default function Worksheet({
               <DishSelect
                 dishes={dishes}
                 value={addDishName}
-                emptyLabel="区分なし"
+                emptyLabel="タグなし"
                 className="add-card-dish"
                 style={{ background: dishTint(dishes, dishes.find((d) => d.name === addDishName)?.id ?? null) }}
-                ariaLabel="追加する材料の食事区分"
+                ariaLabel="追加する材料の料理タグ"
                 onChange={setAddDish}
               />
               <button type="button" className="add-card-btn" disabled={!canCommitAdd} onClick={commitAdd}>
@@ -474,7 +508,7 @@ export default function Worksheet({
                               type="button"
                               className="row-del-btn"
                               aria-label={`「${row.food.name}」を削除`}
-                              onClick={() => setConfirmDeleteId(row.id)}
+                              onClick={() => requestDeleteRow(row.id)}
                             >
                               ×
                             </button>
@@ -484,9 +518,9 @@ export default function Worksheet({
                             <DishSelect
                               dishes={dishes}
                               value={rowDish ? rowDish.name : null}
-                              emptyLabel="区分なし"
+                              emptyLabel="タグなし"
                               className={`dish-chip${rowDish ? "" : " empty"}`}
-                              ariaLabel={`${row.food.name}の食事区分`}
+                              ariaLabel={`${row.food.name}の料理タグ`}
                               onChange={(v) => setRowDish(row.id, v)}
                             />
                           </td>
@@ -548,6 +582,10 @@ export default function Worksheet({
             <div className="confirm-overlay" onClick={() => setConfirmDeleteId(null)}>
               <div className="confirm-box" onClick={(e) => e.stopPropagation()}>
                 <div className="confirm-title">「{target.food.name}」を削除しますか？</div>
+                <label className="confirm-skip">
+                  <input type="checkbox" checked={dontAskAgain} onChange={(e) => setDontAskAgain(e.target.checked)} />
+                  次から確認せずに削除する（連続で消せます。⚙の設定で元に戻せます）
+                </label>
                 <div className="confirm-actions">
                   <button type="button" className="confirm-cancel" onClick={() => setConfirmDeleteId(null)}>
                     キャンセル
@@ -558,6 +596,10 @@ export default function Worksheet({
                     onClick={() => {
                       removeRow(target.id);
                       setConfirmDeleteId(null);
+                      if (dontAskAgain) {
+                        setSkipDeleteConfirm(true);
+                        saveSettings({ skipRowDeleteConfirm: true });
+                      }
                     }}
                   >
                     削除する
@@ -573,12 +615,12 @@ export default function Worksheet({
 }
 
 // 料理ごとの小計行を出すか。タグを1つも作っていない献立（従来の献立）では、
-// 「区分なし 小計」が献立小計と全く同じ行になるだけなので出さない。
+// 「未割当 小計」が献立小計と全く同じ行になるだけなので出さない。
 function showGroupSubtotal(g: RowGroup<Row>, dishes: Dish[]): boolean {
   return g.dish !== null || dishes.length > 0;
 }
 
-// 食事区分ごとの小計行（既存の献立小計と同じ14項目）
+// 料理タグごとの小計行（既存の献立小計と同じ14項目）
 function GroupSubtotalRow({
   group,
   dishes,
@@ -595,7 +637,7 @@ function GroupSubtotalRow({
   return (
     <tr className="dish-subtotal" style={tintStyle(group.dish ? dishTint(dishes, group.dish.id) : undefined)}>
       {withDelColumn && <td className="col-del"></td>}
-      <td className="col-name">{group.dish ? group.dish.name : "区分なし"} 小計</td>
+      <td className="col-name">{group.dish ? group.dish.name : "未割当"} 小計</td>
       <td className="col-weight num">{weight}</td>
       {NUTRIENT_KEYS.map((k) => (
         <td key={k} className="num">
@@ -604,6 +646,16 @@ function GroupSubtotalRow({
       ))}
     </tr>
   );
+}
+
+// Web Share API で画像ファイルを共有できるか（iOS Safari 15+・Android Chrome 等）
+function canShareImageFiles(): boolean {
+  try {
+    const probe = new File([""], "probe.png", { type: "image/png" });
+    return typeof navigator.canShare === "function" && navigator.canShare({ files: [probe] });
+  } catch {
+    return false;
+  }
 }
 
 // 画像用表示の拡大上限（材料が少ないときに文字が巨大になりすぎないように）
@@ -701,6 +753,59 @@ function ExportView({
     ro.observe(content);
     return () => ro.disconnect();
   }, []);
+
+  // 共有用の画像を表示と同時に作っておく。iOS の共有シートはタップ直後にしか開けないため、
+  // タップしてから画像を作ると間に合わない。画像は端末の向きに関係なく常に横長（回転なし）。
+  const imageFileRef = useRef<File | null>(null);
+  const [imageReady, setImageReady] = useState(false);
+  useEffect(() => {
+    if (!layout) return;
+    let cancelled = false;
+    setImageReady(false);
+    const timer = window.setTimeout(async () => {
+      const el = contentRef.current;
+      if (!el) return;
+      try {
+        const blob = await toBlob(el, {
+          pixelRatio: 2,
+          backgroundColor: "#ffffff",
+          width: layout.cw,
+          height: layout.ch,
+          // 画面上の縮尺・センタリング用の位置指定を外して、素の大きさ・左上起点で撮る
+          style: { transform: "none", position: "static", left: "auto", top: "auto", margin: "0" },
+        });
+        if (cancelled || !blob) return;
+        imageFileRef.current = new File([blob], `${menuTitle || "献立"}.png`, { type: "image/png" });
+        setImageReady(true);
+      } catch {
+        /* 画像化に失敗しても表示（スクショ）はそのまま使える */
+      }
+    }, 300);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [layout?.cw, layout?.ch, menuTitle]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // OS標準の共有シート（iOS・Androidとも画面下から出るもの）で画像を送る。非対応ブラウザは画像を保存
+  async function shareImage() {
+    const file = imageFileRef.current;
+    if (!file) return;
+    if (canShareImageFiles()) {
+      try {
+        await navigator.share({ files: [file], title: menuTitle });
+      } catch {
+        /* ユーザーが共有シートを閉じた場合など */
+      }
+      return;
+    }
+    const url = URL.createObjectURL(file);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = file.name;
+    a.click();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
 
   // 操作ボタンはスクショに写らないよう数秒で隠す（画面タップで再表示）
   useEffect(() => {
@@ -803,6 +908,17 @@ function ExportView({
 
           <div className={`export-controls${controlsVisible ? "" : " hidden"}`}>
             <span className="export-hint">画面をタップでボタン表示／非表示</span>
+            <button
+              type="button"
+              className="mode-toggle export-share"
+              disabled={!imageReady}
+              onClick={(e) => {
+                e.stopPropagation();
+                shareImage();
+              }}
+            >
+              {!imageReady ? "画像を準備中…" : canShareImageFiles() ? "共有" : "画像を保存"}
+            </button>
             <button
               type="button"
               className="mode-toggle"

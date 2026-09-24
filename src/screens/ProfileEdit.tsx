@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { normalizeWeightInput } from "../core/weightInput";
 import { ActivityLevel, Profile, Sex, getProfile, saveProfile } from "../lib/storage/profile";
+import { getSettings, saveSettings } from "../lib/storage/settings";
 
 const ACTIVITY_OPTIONS: { value: ActivityLevel; label: string; hint: string }[] = [
   { value: 1, label: "I（低い）", hint: "生活の大部分が座位で、静的な活動が中心" },
@@ -21,6 +22,11 @@ export default function ProfileEdit({ onDone, onCancel }: { onDone: () => void; 
   const [height, setHeight] = useState("");
   const [weight, setWeight] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [confirmRowDelete, setConfirmRowDelete] = useState(true);
+
+  useEffect(() => {
+    getSettings().then((s) => setConfirmRowDelete(!s.skipRowDeleteConfirm));
+  }, []);
 
   useEffect(() => {
     getProfile().then((p) => {
@@ -59,7 +65,7 @@ export default function ProfileEdit({ onDone, onCancel }: { onDone: () => void; 
         <button type="button" className="back-btn" onClick={onCancel} aria-label="戻る">
           ←
         </button>
-        <span className="list-title">プロフィール</span>
+        <span className="list-title">プロフィール・設定</span>
       </header>
 
       <div className="form-card">
@@ -124,6 +130,22 @@ export default function ProfileEdit({ onDone, onCancel }: { onDone: () => void; 
       </div>
 
       <p className="note">プロフィールはこの端末内にのみ保存されます。合計・充足率画面で食事摂取基準の区分を選ぶのに使います。</p>
+
+      {/* 設定（変更するとすぐ保存） */}
+      <div className="form-card">
+        <span className="form-label">設定</span>
+        <label className="setting-row">
+          <input
+            type="checkbox"
+            checked={confirmRowDelete}
+            onChange={(e) => {
+              setConfirmRowDelete(e.target.checked);
+              saveSettings({ skipRowDeleteConfirm: !e.target.checked });
+            }}
+          />
+          材料を削除するときに確認する（オフにすると×で連続して消せます）
+        </label>
+      </div>
     </div>
   );
 }

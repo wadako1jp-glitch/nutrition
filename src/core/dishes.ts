@@ -1,6 +1,6 @@
-// 食事区分（朝食・昼食など）の純粋ロジック。材料行への単一タグ付けとして扱う（データ上の名前は dish のまま）。
+// 料理タグ（主食・主菜など）の純粋ロジック。材料行への単一タグ付けとして扱う。
 // Reactに依存しない（CLAUDE.md「src/core/」の方針）。
-// 区分は専用の管理UIを持たず、プルダウンで選んだ時点で作られ、どの材料にも使われなくなったら消える。
+// タグは専用の管理UIを持たず、プルダウンで選んだ時点で作られ、どの材料にも使われなくなったら消える。
 
 export interface Dish {
   id: string;
@@ -8,8 +8,7 @@ export interface Dish {
   order: number;
 }
 
-// 食事区分。自由入力は持たない（1献立＝1日分を朝・昼・夕・間食で分けて入れる使い方）
-export const DISH_PRESETS = ["朝食", "昼食", "夕食", "間食"] as const;
+export const DISH_PRESETS = ["主食", "主菜", "副菜", "副菜2", "汁物", "デザート"] as const;
 
 export function createDishId(): string {
   return `dish_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`;
@@ -18,7 +17,7 @@ export function createDishId(): string {
 export type EnsureDishResult = { ok: true; dishes: Dish[]; id: string } | { ok: false; error: string };
 
 // 名前でタグを引き、無ければ作る（同一献立内でタグ名は一意。前後の空白は無視）。
-// 並び順: プリセットは定義順で固定、それ以外（旧版のタグ）はその後ろに作った順。
+// 並び順: プリセットは定義順で固定、自由入力のタグはその後ろに作った順。
 export function ensureDish(dishes: Dish[], rawName: string, id: string = createDishId()): EnsureDishResult {
   const name = rawName.trim();
   if (!name) return { ok: false, error: "タグ名を入力してください" };
@@ -41,7 +40,7 @@ export function sortedDishes(dishes: Dish[]): Dish[] {
   return [...dishes].sort((a, b) => a.order - b.order);
 }
 
-// プルダウンに出す区分名：プリセット＋（以前の版で付けた「主食」等の旧タグが残っていればそれも）
+// プルダウンに出すタグ名：プリセット＋この献立で作った自由入力タグ
 export function dishOptionNames(dishes: Dish[]): string[] {
   const custom = sortedDishes(dishes)
     .map((d) => d.name)

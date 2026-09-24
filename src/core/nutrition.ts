@@ -22,6 +22,23 @@ export const NUTRIENT_KEYS = [
 
 export type NutrientKey = (typeof NUTRIENT_KEYS)[number];
 
+// 用紙の列見出し [名称, 単位]（CLAUDE.md「UI・入力体験の要件」参照）
+export const NUTRIENT_LABELS: Record<NutrientKey, [string, string]> = {
+  kcal: ["エネルギー", "kcal"],
+  protein_g: ["蛋白質", "g"],
+  fat_g: ["脂質", "g"],
+  carb_g: ["炭水化物", "g"],
+  fiber_g: ["食物繊維", "g"],
+  ca_mg: ["カルシウム", "mg"],
+  fe_mg: ["鉄", "mg"],
+  va_ugRAE: ["ビタミンA", "μgRAE"],
+  vd_ug: ["ビタミンD", "μg"],
+  vb1_mg: ["ビタミンB1", "mg"],
+  vb2_mg: ["ビタミンB2", "mg"],
+  vc_mg: ["ビタミンC", "mg"],
+  salt_g: ["食塩相当量", "g"],
+};
+
 export type NutrientRow = Record<NutrientKey, number>;
 
 // 小数第1位で丸める（アプリ全体でこの関数だけを使う。用紙と同じ丸めルール）

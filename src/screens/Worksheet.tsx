@@ -1,5 +1,16 @@
 import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import type { KeyboardEvent as ReactKeyboardEvent, PointerEvent as ReactPointerEvent } from "react";
+import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent, PointerEvent as ReactPointerEvent } from "react";
+import {
+  DISH_PRESETS,
+  Dish,
+  RowGroup,
+  addDish,
+  dishTint,
+  groupRowsByDish,
+  removeDish,
+  sortedDishes,
+  toggleDishId,
+} from "../core/dishes";
 import {
   Food,
   cellValue,
@@ -7,7 +18,7 @@ import {
   loadFoods,
   searchFoods,
 } from "../data/foods";
-import { NUTRIENT_KEYS, NutrientRow, computeRow, round1, sumRows } from "../core/nutrition";
+import { NUTRIENT_KEYS, NUTRIENT_LABELS, NutrientRow, computeRow, round1, sumRows } from "../core/nutrition";
 import {
   isValidWeightNumber,
   normalizeWeightInput,
@@ -17,22 +28,7 @@ import {
 } from "../core/weightInput";
 import { StoredMenu, createMenuId, deleteMenu, getMenu, nextDefaultTitle, upsertMenu } from "../lib/storage/menus";
 
-// 用紙の列見出し（CLAUDE.md「UI・入力体験の要件」参照）
-const COLUMN_LABELS: Record<(typeof NUTRIENT_KEYS)[number], [string, string]> = {
-  kcal: ["エネルギー", "kcal"],
-  protein_g: ["蛋白質", "g"],
-  fat_g: ["脂質", "g"],
-  carb_g: ["炭水化物", "g"],
-  fiber_g: ["食物繊維", "g"],
-  ca_mg: ["カルシウム", "mg"],
-  fe_mg: ["鉄", "mg"],
-  va_ugRAE: ["ビタミンA", "μgRAE"],
-  vd_ug: ["ビタミンD", "μg"],
-  vb1_mg: ["ビタミンB1", "mg"],
-  vb2_mg: ["ビタミンB2", "mg"],
-  vc_mg: ["ビタミンC", "mg"],
-  salt_g: ["食塩相当量", "g"],
-};
+const COLUMN_LABELS = NUTRIENT_LABELS;
 
 const LONG_PRESS_MS = 550;
 const SUGGEST_PAGE_SIZE = 8;
@@ -41,6 +37,12 @@ interface Row {
   id: number;
   food: Food; // カードで確定済みの食品。一覧に乗る行は常に確定済み
   usedWeight: string; // 使用量(g)＝料理で使う可食部の重さ。栄養計算もこの値をそのまま使う。
+  dishId: string | null; // 料理タグ。null = 未割当
+}
+
+// 行の淡いハイライト色をCSS変数で渡す（sticky列も同じ色で塗るため）
+function tintStyle(tint: string | undefined): CSSProperties | undefined {
+  return tint ? ({ "--row-bg": tint } as CSSProperties) : undefined;
 }
 
 let nextRowId = 1;
@@ -65,6 +67,14 @@ export default function Worksheet({
   const [menuTitle, setMenuTitle] = useState("");
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
   const [loaded, setLoaded] = useState(false);
+
+  // --- 料理タグ ---
+  const [dishes, setDishes] = useState<Dish[]>([]);
+  const [dishInput, setDishInput] = useState("");
+  const [dishError, setDishError] = useState<string | null>(null);
+  const [confirmDishDeleteId, setConfirmDishDeleteId] = useState<string | null>(null);
+  const [pickerRowId, setPickerRowId] = useState<number | null>(null); // タグ選択を開いている材料行
+  const [addDishId, setAddDishId] = useState<string | null>(null); // 次に追加する材料のタグ（直前の選択を引き継ぐ）
 
   // --- 入力カード（常時1枚固定表示） ---
   const [addQuery, setAddQuery] = useState("");
@@ -93,10 +103,11 @@ export default function Worksheet({
           createdAtRef.current = stored.createdAt;
           everSavedRef.current = true;
           setMenuTitle(stored.title);
+          setDishes(stored.dishes);
           const restored: Row[] = [];
           for (const r of stored.rows) {
             const food = findByCode(foods, r.code);
-            if (food) restored.push({ id: nextRowId++, food, usedWeight: r.usedWeight });
+            if (food) restored.push({ id: nextRowId++, food, usedWeight: r.usedWeight, dishId: r.dishId });
           }
           setRows(restored);
         }
@@ -135,7 +146,8 @@ export default function Worksheet({
       const stored: StoredMenu = {
         id: stableIdRef.current,
         title,
-        rows: rows.map((r) => ({ code: r.food.code, usedWeight: r.usedWeight })),
+        dishes,
+        rows: rows.map((r) => ({ code: r.food.code, usedWeight: r.usedWeight, dishId: r.dishId })),
         createdAt: createdAtRef.current,
         updatedAt: Date.now(),
       };
@@ -146,7 +158,7 @@ export default function Worksheet({
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rows, menuTitle, loaded]);
+  }, [rows, dishes, menuTitle, loaded]);
 
   useEffect(() => {
     setSuggestLimit(SUGGEST_PAGE_SIZE);
@@ -198,7 +210,7 @@ export default function Worksheet({
 
   function commitAdd() {
     if (!addFood || !isValidWeightNumber(addWeight)) return;
-    setRows((rs) => [...rs, { id: nextRowId++, food: addFood, usedWeight: addWeight }]);
+    setRows((rs) => [...rs, { id: nextRowId++, food: addFood, usedWeight: addWeight, dishId: addDishId }]);
     setAddFood(null);
     setAddQuery("");
     setAddWeight("");
@@ -214,6 +226,29 @@ export default function Worksheet({
     setRows((rs) => rs.filter((r) => r.id !== id));
   }
 
+  function handleAddDish(name: string) {
+    const result = addDish(dishes, name);
+    if (!result.ok) {
+      setDishError(result.error);
+      return;
+    }
+    setDishes(result.dishes);
+    setDishInput("");
+    setDishError(null);
+  }
+
+  function handleRemoveDish(dishId: string) {
+    const next = removeDish(dishes, rows, dishId);
+    setDishes(next.dishes);
+    setRows(next.rows);
+    if (addDishId === dishId) setAddDishId(null);
+  }
+
+  function setRowDish(rowId: number, selected: string | null) {
+    setRows((rs) => rs.map((r) => (r.id === rowId ? { ...r, dishId: toggleDishId(r.dishId, selected) } : r)));
+    setPickerRowId(null);
+  }
+
   function clearLongPressTimer() {
     if (longPressTimerRef.current !== null) {
       window.clearTimeout(longPressTimerRef.current);
@@ -223,6 +258,9 @@ export default function Worksheet({
 
   function handleRowPointerDown(e: ReactPointerEvent<HTMLTableRowElement>, id: number) {
     if (e.pointerType === "mouse" && e.button !== 0) return;
+    // 行内のボタン・入力欄から始まった操作は長押し判定しない。
+    // setPointerCapture で行がポインタを奪うと、×ボタンやタグのチップのクリックが届かなくなるため。
+    if ((e.target as HTMLElement).closest("button, input, select")) return;
     clearLongPressTimer();
     longPressTimerRef.current = window.setTimeout(() => {
       longPressTimerRef.current = null;
@@ -238,6 +276,8 @@ export default function Worksheet({
   const nutrientRows: NutrientRow[] = rows.map((r) => computeRow(r.food, weightValue(r.usedWeight)));
   const subtotal = sumRows(nutrientRows);
   const totalWeight = round1(rows.reduce((acc, r) => acc + weightValue(r.usedWeight), 0));
+  const groups = groupRowsByDish(rows, dishes);
+  const unusedPresets = DISH_PRESETS.filter((p) => !dishes.some((d) => d.name === p));
 
   return (
     <div className="page">
@@ -265,6 +305,7 @@ export default function Worksheet({
       {exportMode ? (
         <ExportView
           rows={rows}
+          dishes={dishes}
           nutrientRows={nutrientRows}
           subtotal={subtotal}
           totalWeight={totalWeight}
@@ -341,10 +382,75 @@ export default function Worksheet({
                   <span className="weight-warning">{weightWarningMessage(addWeight)}</span>
                 )}
               </div>
+              {dishes.length > 0 && (
+                <select
+                  className="add-card-dish"
+                  aria-label="追加する材料の料理タグ"
+                  value={addDishId ?? ""}
+                  style={{ background: dishTint(dishes, addDishId) }}
+                  onChange={(e) => setAddDishId(e.target.value || null)}
+                >
+                  <option value="">タグなし</option>
+                  {sortedDishes(dishes).map((d) => (
+                    <option key={d.id} value={d.id}>
+                      {d.name}
+                    </option>
+                  ))}
+                </select>
+              )}
               <button type="button" className="add-card-btn" disabled={!canCommitAdd} onClick={commitAdd}>
                 材料を追加
               </button>
             </div>
+          </div>
+
+          {/* --- 料理タグ（主食・主菜など） --- */}
+          <div className="dish-bar">
+            <div className="dish-bar-row">
+              <span className="dish-bar-label">料理タグ</span>
+              {sortedDishes(dishes).map((d) => (
+                <span key={d.id} className="dish-tag" style={{ background: dishTint(dishes, d.id) }}>
+                  {d.name}
+                  <button
+                    type="button"
+                    className="dish-tag-del"
+                    aria-label={`料理タグ「${d.name}」を削除`}
+                    onClick={() => setConfirmDishDeleteId(d.id)}
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+              {dishes.length === 0 && <span className="dish-bar-empty">未作成（材料を料理ごとにまとめられます）</span>}
+            </div>
+            <div className="dish-bar-row">
+              {unusedPresets.map((p) => (
+                <button key={p} type="button" className="dish-preset" onClick={() => handleAddDish(p)}>
+                  ＋{p}
+                </button>
+              ))}
+              <input
+                className="dish-input"
+                value={dishInput}
+                placeholder="自由入力"
+                onChange={(e) => {
+                  setDishInput(e.target.value);
+                  setDishError(null);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleAddDish(dishInput);
+                }}
+              />
+              <button
+                type="button"
+                className="dish-preset"
+                disabled={!dishInput.trim()}
+                onClick={() => handleAddDish(dishInput)}
+              >
+                追加
+              </button>
+            </div>
+            {dishError && <span className="weight-warning">{dishError}</span>}
           </div>
 
           <div className="sheet">
@@ -368,16 +474,20 @@ export default function Worksheet({
                   </tr>
                 </thead>
                 <tbody>
-                  {rows.map((row, i) => {
+                  {groups.map((g) => (
+                    <Fragment key={g.dish?.id ?? "unassigned"}>
+                  {g.rows.map(({ row, index: i }) => {
                     const computed = nutrientRows[i];
                     // 確定済みの行で使用量が空欄なのは「入力し忘れ」なので、
                     // 数字バリデーションの警告（weightHasWarning）とは別に必ず警告表示する。
                     const isBlank = row.usedWeight.trim() === "";
                     const warn = isBlank || weightHasWarning(row.usedWeight);
                     const warnMsg = isBlank ? "使用量が未入力です（0として計算中）" : weightWarningMessage(row.usedWeight);
+                    const rowDish = g.dish;
                     return (
                       <Fragment key={row.id}>
                         <tr
+                          style={tintStyle(dishTint(dishes, row.dishId))}
                           onPointerDown={(e) => handleRowPointerDown(e, row.id)}
                           onPointerUp={clearLongPressTimer}
                           onPointerCancel={clearLongPressTimer}
@@ -394,7 +504,19 @@ export default function Worksheet({
                               ×
                             </button>
                           </td>
-                          <td className="col-name">{row.food.name}</td>
+                          <td className="col-name">
+                            {row.food.name}
+                            {dishes.length > 0 && (
+                              <button
+                                type="button"
+                                className={`dish-chip${rowDish ? "" : " empty"}`}
+                                aria-expanded={pickerRowId === row.id}
+                                onClick={() => setPickerRowId((id) => (id === row.id ? null : row.id))}
+                              >
+                                {rowDish ? rowDish.name : "＋タグ"}
+                              </button>
+                            )}
+                          </td>
                           <td className="col-weight">
                             <input
                               className={`num${warn ? " invalid" : ""}`}
@@ -416,12 +538,39 @@ export default function Worksheet({
                             </td>
                           ))}
                         </tr>
+                        {pickerRowId === row.id && (
+                          <tr className="dish-picker-row">
+                            <td colSpan={3 + NUTRIENT_KEYS.length}>
+                              <div className="dish-picker">
+                                {sortedDishes(dishes).map((d) => (
+                                  <button
+                                    key={d.id}
+                                    type="button"
+                                    className={`dish-option${row.dishId === d.id ? " selected" : ""}`}
+                                    style={{ background: dishTint(dishes, d.id) }}
+                                    onClick={() => setRowDish(row.id, d.id)}
+                                  >
+                                    {row.dishId === d.id ? `✓ ${d.name}` : d.name}
+                                  </button>
+                                ))}
+                                <button type="button" className="dish-option" onClick={() => setRowDish(row.id, null)}>
+                                  なし
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
                       </Fragment>
                     );
                   })}
+                      {showGroupSubtotal(g, dishes) && (
+                        <GroupSubtotalRow group={g} dishes={dishes} nutrientRows={nutrientRows} withDelColumn />
+                      )}
+                    </Fragment>
+                  ))}
                   <tr className="subtotal">
                     <td className="col-del"></td>
-                    <td className="col-name">小計</td>
+                    <td className="col-name">{dishes.length ? "献立 小計" : "小計"}</td>
                     <td className="col-weight num">{rows.length ? totalWeight : ""}</td>
                     {NUTRIENT_KEYS.map((k) => (
                       <td key={k} className="num">
@@ -467,7 +616,73 @@ export default function Worksheet({
             </div>
           );
         })()}
+
+      {confirmDishDeleteId !== null &&
+        (() => {
+          const target = dishes.find((d) => d.id === confirmDishDeleteId);
+          if (!target) return null;
+          const count = rows.filter((r) => r.dishId === target.id).length;
+          return (
+            <div className="confirm-overlay" onClick={() => setConfirmDishDeleteId(null)}>
+              <div className="confirm-box" onClick={(e) => e.stopPropagation()}>
+                <div className="confirm-title">
+                  料理タグ「{target.name}」を削除しますか？
+                  {count > 0 && <div className="confirm-sub">付いている材料{count}件は消えずに「未割当」に戻ります。</div>}
+                </div>
+                <div className="confirm-actions">
+                  <button type="button" className="confirm-cancel" onClick={() => setConfirmDishDeleteId(null)}>
+                    キャンセル
+                  </button>
+                  <button
+                    type="button"
+                    className="confirm-delete"
+                    onClick={() => {
+                      handleRemoveDish(target.id);
+                      setConfirmDishDeleteId(null);
+                    }}
+                  >
+                    削除する
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
     </div>
+  );
+}
+
+// 料理ごとの小計行を出すか。タグを1つも作っていない献立（従来の献立）では、
+// 「未割当 小計」が献立小計と全く同じ行になるだけなので出さない。
+function showGroupSubtotal(g: RowGroup<Row>, dishes: Dish[]): boolean {
+  return g.dish !== null || dishes.length > 0;
+}
+
+// 料理タグごとの小計行（既存の献立小計と同じ14項目）
+function GroupSubtotalRow({
+  group,
+  dishes,
+  nutrientRows,
+  withDelColumn,
+}: {
+  group: RowGroup<Row>;
+  dishes: Dish[];
+  nutrientRows: NutrientRow[];
+  withDelColumn: boolean;
+}) {
+  const sub = sumRows(group.rows.map((x) => nutrientRows[x.index]));
+  const weight = round1(group.rows.reduce((acc, x) => acc + weightValue(x.row.usedWeight), 0));
+  return (
+    <tr className="dish-subtotal" style={tintStyle(group.dish ? dishTint(dishes, group.dish.id) : undefined)}>
+      {withDelColumn && <td className="col-del"></td>}
+      <td className="col-name">{group.dish ? group.dish.name : "未割当"} 小計</td>
+      <td className="col-weight num">{weight}</td>
+      {NUTRIENT_KEYS.map((k) => (
+        <td key={k} className="num">
+          {sub[k]}
+        </td>
+      ))}
+    </tr>
   );
 }
 
@@ -489,6 +704,7 @@ interface ExportLayout {
 // 縦持ちなら中身を90°回転して横長にする（iPhoneは向きの固定・全画面APIが使えないため）。
 function ExportView({
   rows,
+  dishes,
   nutrientRows,
   subtotal,
   totalWeight,
@@ -496,6 +712,7 @@ function ExportView({
   onClose,
 }: {
   rows: Row[];
+  dishes: Dish[];
   nutrientRows: NutrientRow[];
   subtotal: NutrientRow;
   totalWeight: number;
@@ -626,22 +843,32 @@ function ExportView({
                 </tr>
               </thead>
               <tbody>
-                {rows.map((row, i) => {
-                  const computed = nutrientRows[i];
-                  return (
-                    <tr key={row.id}>
-                      <td className="col-name">{row.food.name}</td>
-                      <td className="col-weight num">{row.usedWeight || 0}</td>
-                      {NUTRIENT_KEYS.map((k) => (
-                        <td key={k} className="num">
-                          {computed[k]}
-                        </td>
-                      ))}
-                    </tr>
-                  );
-                })}
+                {groupRowsByDish(rows, dishes).map((g) => (
+                  <Fragment key={g.dish?.id ?? "unassigned"}>
+                    {g.rows.map(({ row, index: i }) => {
+                      const computed = nutrientRows[i];
+                      return (
+                        <tr key={row.id} style={tintStyle(dishTint(dishes, row.dishId))}>
+                          <td className="col-name">
+                            {row.food.name}
+                            {g.dish && <span className="dish-chip">{g.dish.name}</span>}
+                          </td>
+                          <td className="col-weight num">{row.usedWeight || 0}</td>
+                          {NUTRIENT_KEYS.map((k) => (
+                            <td key={k} className="num">
+                              {computed[k]}
+                            </td>
+                          ))}
+                        </tr>
+                      );
+                    })}
+                    {showGroupSubtotal(g, dishes) && (
+                      <GroupSubtotalRow group={g} dishes={dishes} nutrientRows={nutrientRows} withDelColumn={false} />
+                    )}
+                  </Fragment>
+                ))}
                 <tr className="subtotal">
-                  <td className="col-name">小計</td>
+                  <td className="col-name">{dishes.length ? "献立 小計" : "小計"}</td>
                   <td className="col-weight num">{totalWeight || ""}</td>
                   {NUTRIENT_KEYS.map((k) => (
                     <td key={k} className="num">

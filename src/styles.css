@@ -66,12 +66,14 @@ body {
   font-weight: 700;
   line-height: 1.3;
 }
-.col-name { position: sticky; left: 34px; z-index: 1; background: #fff; text-align: left; min-width: 120px; }
+.col-name { position: sticky; left: 34px; z-index: 1; background: var(--row-bg, #fff); text-align: left; min-width: 120px; }
+/* 料理タグの淡いハイライト（行に --row-bg を渡す。sticky列も同じ色で塗る） */
+.sheet-table tbody tr td { background: var(--row-bg, #fff); }
 .sheet-table thead .col-name { background: #e6e6e6; }
-.sheet-table tbody .col-name { font-size: 12px; padding: 6px; }
+.sheet-table tbody .col-name { font-size: 12px; padding: 6px; text-align: left; }
 .col-weight { min-width: 52px; border-right: 2px solid #222 !important; }
 
-.col-del { position: sticky; left: 0; z-index: 2; background: #fff; min-width: 34px; width: 34px; padding: 0 !important; text-align: center; }
+.col-del { position: sticky; left: 0; z-index: 2; background: var(--row-bg, #fff); min-width: 34px; width: 34px; padding: 0 !important; text-align: center; }
 .sheet-table thead .col-del { background: #e6e6e6; }
 .subtotal .col-del { background: #eeeeee; }
 .row-del-btn {
@@ -96,7 +98,105 @@ input.num {
 input.num.invalid { background: #fdeceb; outline: 1px solid #b3372c; }
 td.num { font-family: "IBM Plex Mono", Menlo, monospace; }
 
-.subtotal td { font-weight: 700; background: #eeeeee; }
+.sheet-table tbody .subtotal td { font-weight: 700; background: #eeeeee; }
+/* 料理タグごとの小計（タグの淡色のまま、区切り線と太字で献立小計と区別） */
+.sheet-table tbody .dish-subtotal td { font-weight: 700; border-bottom: 1px solid #888; }
+.sheet-table tbody .dish-subtotal .col-name { font-size: 11px; }
+
+/* --- 料理タグ --- */
+.dish-chip {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 0 6px;
+  border: 1px solid #8a8272;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.7);
+  color: #333;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 16px;
+  font-family: inherit;
+  vertical-align: 1px;
+  cursor: pointer;
+}
+.dish-chip.empty { border-style: dashed; color: #999; font-weight: 400; background: none; }
+.dish-picker-row td { padding: 0 !important; background: #fffdf5 !important; }
+.dish-picker {
+  position: sticky;
+  left: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px;
+  width: min(100vw - 40px, 440px);
+}
+.dish-option {
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid #999;
+  background: #fff;
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+}
+.dish-option.selected { border: 2px solid #222; font-weight: 700; }
+
+.dish-bar {
+  border: 1px solid #222;
+  background: #fff;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.dish-bar-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.dish-bar-label { font-size: 12px; font-weight: 700; margin-right: 2px; }
+.dish-bar-empty { font-size: 11px; color: #888; }
+.dish-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding-left: 8px;
+  border: 1px solid #8a8272;
+  font-size: 12px;
+  font-weight: 700;
+}
+.dish-tag-del {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: none;
+  color: #a33;
+  font-size: 14px;
+  cursor: pointer;
+}
+.dish-preset {
+  height: 30px;
+  padding: 0 8px;
+  border: 1px solid #999;
+  background: #fbf8f0;
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+}
+.dish-preset:disabled { color: #aaa; cursor: not-allowed; }
+.dish-input {
+  width: 96px;
+  height: 30px;
+  padding: 0 6px;
+  border: 1px solid #999;
+  font-size: 13px;
+  font-family: inherit;
+}
+.add-card-dish {
+  height: 38px;
+  max-width: 96px;
+  border: 1px solid #999;
+  background: #fff;
+  font-size: 13px;
+  font-family: inherit;
+}
+.confirm-sub { margin-top: 6px; font-size: 12px; font-weight: 400; color: #555; }
 
 /* 使用量バリデーションの警告表示 */
 .weight-warning {
@@ -350,3 +450,110 @@ td.num { font-family: "IBM Plex Mono", Menlo, monospace; }
   cursor: pointer;
 }
 .menu-item-del:hover { background: #fdeceb; }
+.menu-item.selected { background: #fbf8f0; outline: 2px solid #222; outline-offset: -1px; }
+.menu-item-check {
+  flex-shrink: 0;
+  width: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-right: 1px solid #ddd;
+  cursor: pointer;
+}
+.menu-item-check input { width: 20px; height: 20px; accent-color: #222; }
+.summary-open-btn {
+  height: 42px;
+  border: 1px solid #222;
+  background: #222;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+/* --- プロフィール画面 --- */
+.form-card {
+  border: 1px solid #222;
+  background: #fff;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.form-field { display: flex; flex-direction: column; gap: 6px; }
+.form-label { font-size: 13px; font-weight: 700; }
+.req { margin-left: 6px; padding: 0 4px; border: 1px solid #b3372c; color: #b3372c; font-size: 10px; font-weight: 700; }
+.form-input-unit { display: flex; align-items: center; gap: 6px; font-size: 13px; }
+.form-input-unit input {
+  width: 100px;
+  height: 38px;
+  padding: 0 10px;
+  border: 1px solid #999;
+  font-size: 15px;
+  font-family: "IBM Plex Mono", Menlo, monospace;
+  text-align: right;
+}
+.seg { display: flex; gap: 6px; }
+.seg button {
+  flex: 1;
+  min-height: 40px;
+  border: 1px solid #999;
+  background: #fff;
+  font-size: 14px;
+  font-family: inherit;
+  cursor: pointer;
+}
+.seg button.on { border: 2px solid #222; background: #fbf8f0; font-weight: 700; }
+.seg-col { flex-direction: column; }
+.seg-col button { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 8px 10px; text-align: left; }
+.seg-col small { font-size: 11px; color: #666; font-weight: 400; }
+.form-save { flex: none; height: 44px; }
+
+/* --- 合計・充足率画面 --- */
+.empty-card {
+  border: 1px dashed #888;
+  background: #fff;
+  padding: 16px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.empty-card .add-card-btn { flex: none; }
+.summary-menus { border: 1px solid #222; background: #fff; }
+.summary-menu { display: flex; justify-content: space-between; padding: 6px 10px; border-bottom: 1px solid #ddd; font-size: 13px; }
+.summary-menu.total { border-bottom: none; background: #eee; font-weight: 700; }
+.summary-menu .num { font-family: "IBM Plex Mono", Menlo, monospace; }
+.profile-line { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font-size: 12px; }
+.profile-sub { flex-basis: 100%; font-size: 11px; color: #8a5a00; }
+.link-btn { border: none; background: none; padding: 0; color: #1f4f8a; text-decoration: underline; font-size: 12px; font-family: inherit; cursor: pointer; }
+
+.intake-list { list-style: none; margin: 0; padding: 0; border: 1px solid #222; background: #fff; }
+.intake-item { padding: 8px 10px; border-bottom: 1px solid #ddd; display: flex; flex-direction: column; gap: 4px; }
+.intake-item:last-child { border-bottom: none; }
+.intake-head { display: flex; align-items: baseline; gap: 8px; }
+.intake-label { font-size: 13px; font-weight: 700; flex: 1; }
+.intake-value { font-size: 13px; font-family: "IBM Plex Mono", Menlo, monospace; }
+.intake-pct { min-width: 64px; text-align: right; font-size: 14px; font-weight: 700; font-family: "IBM Plex Mono", Menlo, monospace; }
+.intake-status { min-width: 30px; padding: 0 4px; font-size: 11px; font-weight: 700; color: #fff; background: var(--st, #888); text-align: center; }
+.intake-ref { font-size: 11px; color: #666; }
+.bar { position: relative; height: 10px; background: #eee; }
+.bar-fill { position: absolute; left: 0; top: 0; bottom: 0; background: var(--st, #888); }
+.bar-band { position: absolute; top: -2px; bottom: -2px; border: 1px solid #555; border-top: none; border-bottom: none; background: rgba(0, 0, 0, 0.06); }
+.bar-mark { position: absolute; top: -3px; bottom: -3px; width: 2px; background: #222; }
+.st-low { --st: #d0801f; }
+.st-ok { --st: #3f7f45; }
+.st-high { --st: #3b6ea8; }
+.st-over { --st: #b3372c; }
+.intake-item.st-over { background: #fdeceb; }
+.intake-item.st-over .intake-pct { color: #b3372c; }
+.intake-item.st-low .intake-pct { color: #b06a10; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 11px; color: #555; }
+.legend-item { display: inline-flex; align-items: center; gap: 4px; }
+.legend-item i { width: 12px; height: 10px; background: var(--st); }
+.legend-note { flex-basis: 100%; }
+.totals-table { width: 100%; border: 1px solid #222; background: #fff; }
+.totals-table .t-label { text-align: left; }
+.dri-note { border: 1px solid #c9b98f; background: #fbf8f0; padding: 8px 10px; color: #5a4a20; }

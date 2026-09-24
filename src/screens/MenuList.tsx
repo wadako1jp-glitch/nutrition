@@ -7,9 +7,17 @@ import { StoredMenu, deleteMenu, listMenus } from "../lib/storage/menus";
 export default function MenuList({
   onOpen,
   onCreate,
+  selectedIds,
+  onSelectedChange,
+  onOpenSummary,
+  onOpenProfile,
 }: {
   onOpen: (id: string) => void;
   onCreate: () => void;
+  selectedIds: string[]; // 合計・充足率の対象として選んだ献立
+  onSelectedChange: (ids: string[]) => void;
+  onOpenSummary: () => void;
+  onOpenProfile: () => void;
 }) {
   const [foods, setFoods] = useState<Food[] | null>(null);
   const [menus, setMenus] = useState<StoredMenu[] | null>(null);
@@ -21,13 +29,23 @@ export default function MenuList({
   }, []);
 
   function refresh() {
-    listMenus().then(setMenus);
+    listMenus().then((ms) => {
+      setMenus(ms);
+      // 削除済みの献立が選択に残らないようにする
+      const alive = selectedIds.filter((id) => ms.some((m) => m.id === id));
+      if (alive.length !== selectedIds.length) onSelectedChange(alive);
+    });
   }
 
   async function handleDelete(id: string) {
     await deleteMenu(id);
     setConfirmDeleteId(null);
+    onSelectedChange(selectedIds.filter((x) => x !== id));
     refresh();
+  }
+
+  function toggleSelected(id: string) {
+    onSelectedChange(selectedIds.includes(id) ? selectedIds.filter((x) => x !== id) : [...selectedIds, id]);
   }
 
   return (
@@ -37,7 +55,14 @@ export default function MenuList({
         <button type="button" className="mode-toggle" onClick={onCreate}>
           ＋新しい献立
         </button>
+        <button type="button" className="back-btn" onClick={onOpenProfile} aria-label="プロフィール設定" title="プロフィール設定">
+          ⚙
+        </button>
       </header>
+
+      <button type="button" className="summary-open-btn" onClick={onOpenSummary}>
+        合計・充足率を見る（{selectedIds.length}件選択中）
+      </button>
 
       {menus === null ? (
         <p className="note">読み込み中…</p>
@@ -50,6 +75,8 @@ export default function MenuList({
               key={m.id}
               menu={m}
               foods={foods}
+              selected={selectedIds.includes(m.id)}
+              onToggleSelected={() => toggleSelected(m.id)}
               onOpen={() => onOpen(m.id)}
               onDelete={() => setConfirmDeleteId(m.id)}
             />
@@ -84,11 +111,15 @@ export default function MenuList({
 function MenuListItem({
   menu,
   foods,
+  selected,
+  onToggleSelected,
   onOpen,
   onDelete,
 }: {
   menu: StoredMenu;
   foods: Food[] | null;
+  selected: boolean;
+  onToggleSelected: () => void;
   onOpen: () => void;
   onDelete: () => void;
 }) {
@@ -113,7 +144,10 @@ function MenuListItem({
   });
 
   return (
-    <li className="menu-item">
+    <li className={`menu-item${selected ? " selected" : ""}`}>
+      <label className="menu-item-check" title="合計・充足率の対象にする">
+        <input type="checkbox" checked={selected} onChange={onToggleSelected} aria-label={`「${menu.title}」を合計の対象にする`} />
+      </label>
       <button type="button" className="menu-item-main" onClick={onOpen}>
         <span className="menu-item-title">{menu.title}</span>
         <span className="menu-item-meta">

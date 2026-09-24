@@ -5,8 +5,8 @@ import { VitePWA } from "vite-plugin-pwa";
 // 栄養計算アプリ: オフライン前提のPWA。
 // 静的データ（成分表JSON等）とアプリ本体を丸ごとキャッシュし、
 // 接続が弱い/無い環境でも起動・計算できるようにする。
-// 配信パス。GitHub Pages のプロジェクトサイト（pepstech.pw/<リポジトリ名>/）で
-// 公開するため、CIでは BASE_PATH にリポジトリ名を渡す。ローカル開発時は "/"。
+// 配信パス。本番は nutrition.pepstech.pw 直下なので "/"。
+// サブパス（例: xxx.github.io/nutrition/）で配信する場合は BASE_PATH で渡す。
 const base = process.env.BASE_PATH ?? "/";
 
 export default defineConfig({

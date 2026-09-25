@@ -6,6 +6,7 @@
 //   useWideChrome.ts        横持ち（ワイド表示）でツールバーを隠す仕組み
 // 発注量の表示は src/features/order-quantity/OrderView.tsx。
 // このファイルがするのは、献立の読み込みと自動保存、材料の追加・変更・削除、表示の切り替え。
+// 材料表・発注量・画像用表示のどれを出すか（mode）はURLで決まる（src/lib/route.ts）。スマホの「戻る」で1つ前の表示に戻る。
 import { useEffect, useRef, useState } from "react";
 import { Dish, ensureDish, pruneUnusedDishes } from "../../core/dishes";
 import { MEALS, Meal, guessMeal, menuDateStamp, menuTitle as buildMenuTitle } from "../../core/menuTitle";
@@ -14,7 +15,8 @@ import { normalizeWeightInput, weightValue } from "../../core/weightInput";
 import { CURRENT_FOOD_TABLE } from "../../data/foodTable";
 import { Food, findByCode, loadFoods } from "../../data/foods";
 import OrderView from "../../features/order-quantity/OrderView";
-import { StoredMenu, StoredMenuRow, createMenuId, deleteMenu, getMenu, upsertMenu } from "../../lib/storage/menus";
+import type { WorksheetMode } from "../../lib/route";
+import { StoredMenu, StoredMenuRow, deleteMenu, getMenu, upsertMenu } from "../../lib/storage/menus";
 import { getSettings, saveSettings } from "../../lib/storage/settings";
 import AddCard, { AddDraft, EMPTY_ADD_DRAFT } from "./AddCard";
 import DeleteConfirmDialog from "./DeleteConfirmDialog";
@@ -26,12 +28,20 @@ import { useWideChrome } from "./useWideChrome";
 
 export default function Worksheet({
   menuId,
+  isNew,
+  mode,
+  onModeChange,
+  onModeClose,
   onBack,
 }: {
-  menuId: string | null; // 開く献立。null = 新しい献立
-  onBack: () => void;
+  menuId: string; // 開く献立（新しい献立も、作った時点でIDを決めてある）
+  isNew: boolean; // 「新しい献立」から開いた（まだ保存されていない）
+  mode: WorksheetMode; // 材料表 / 発注量 / 画像用表示
+  onModeChange: (mode: WorksheetMode) => void; // 発注量・画像用表示を開く
+  onModeClose: () => void; // 発注量・画像用表示を閉じて1つ前の表示に戻る
+  onBack: () => void; // 献立一覧に戻る
 }) {
-  const stableIdRef = useRef<string>(menuId ?? createMenuId());
+  const stableIdRef = useRef<string>(menuId);
   const createdAtRef = useRef<number>(Date.now());
   // 既存献立として一度でも保存されたか。true になった後は材料0件になっても
   // （全消し＝更新）保存し続けないと、一覧に古い内容が残ったままになってしまう。
@@ -45,11 +55,11 @@ export default function Worksheet({
   const [foods, setFoods] = useState<Food[] | null>(null);
   const [rows, setRows] = useState<Row[]>([]);
   const [dishes, setDishes] = useState<Dish[]>([]); // 料理タグ（選んだ時点で作られ、使われなくなったら消える）
-  const [exportMode, setExportMode] = useState(false); // 画像用表示
-  const [orderMode, setOrderMode] = useState(false); // 発注量の表示（材料表の代わりに出す）
+  const exportMode = mode === "image"; // 画像用表示
+  const orderMode = mode === "order"; // 発注量の表示（材料表の代わりに出す）
   const [servings, setServings] = useState(1); // 発注量の人数
   // 献立名は「yyyymmdd_朝食」固定形式。日付は作成日、区分だけプルダウンで選ぶ（新規は時刻から推定）
-  const [meal, setMeal] = useState<Meal | null>(() => (menuId ? null : guessMeal(createdAtRef.current)));
+  const [meal, setMeal] = useState<Meal | null>(() => (isNew ? guessMeal(createdAtRef.current) : null));
   const [legacyTitle, setLegacyTitle] = useState(""); // 旧版で自由入力された献立名（区分を選ぶまでそのまま使う）
   const menuTitle = meal ? buildMenuTitle(createdAtRef.current, meal) : legacyTitle;
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null); // 削除を確認中の行
@@ -68,28 +78,30 @@ export default function Worksheet({
     if (!foods) return;
     let cancelled = false;
     (async () => {
-      if (menuId) {
-        const stored = await getMenu(menuId);
-        if (!cancelled && stored) {
-          createdAtRef.current = stored.createdAt;
-          everSavedRef.current = true;
-          setMeal(stored.meal);
-          setLegacyTitle(stored.title);
-          foodTableRef.current = stored.foodTable;
-          setServings(stored.servings);
-          setDishes(stored.dishes);
-          const restored: Row[] = [];
-          const unresolved: StoredMenuRow[] = [];
-          for (const r of stored.rows) {
-            const food = findByCode(foods, r.code);
-            if (food) restored.push({ id: newRowId(), food, usedWeight: r.usedWeight, dishId: r.dishId });
-            else unresolved.push(r);
-          }
-          setRows(restored);
-          setUnresolvedRows(unresolved);
+      const stored = await getMenu(menuId);
+      if (cancelled) return;
+      if (stored) {
+        createdAtRef.current = stored.createdAt;
+        everSavedRef.current = true;
+        setMeal(stored.meal);
+        setLegacyTitle(stored.title);
+        foodTableRef.current = stored.foodTable;
+        setServings(stored.servings);
+        setDishes(stored.dishes);
+        const restored: Row[] = [];
+        const unresolved: StoredMenuRow[] = [];
+        for (const r of stored.rows) {
+          const food = findByCode(foods, r.code);
+          if (food) restored.push({ id: newRowId(), food, usedWeight: r.usedWeight, dishId: r.dishId });
+          else unresolved.push(r);
         }
+        setRows(restored);
+        setUnresolvedRows(unresolved);
+      } else if (!isNew) {
+        // 保存前の新しい献立をURLから開き直した場合など、見つからなければ新しい献立として始める
+        setMeal(guessMeal(createdAtRef.current));
       }
-      if (!cancelled) setLoaded(true);
+      setLoaded(true);
     })();
     return () => {
       cancelled = true;
@@ -209,11 +221,11 @@ export default function Worksheet({
           </select>
         </span>
         {!orderMode && (
-          <button type="button" className="mode-toggle" onClick={() => setOrderMode(true)}>
+          <button type="button" className="mode-toggle" onClick={() => onModeChange("order")}>
             発注量
           </button>
         )}
-        <button type="button" className="mode-toggle" onClick={() => setExportMode((v) => !v)}>
+        <button type="button" className="mode-toggle" onClick={() => (exportMode ? onModeClose() : onModeChange("image"))}>
           {exportMode ? "編集に戻る" : "画像用表示"}
         </button>
       </header>
@@ -226,10 +238,10 @@ export default function Worksheet({
           subtotal={subtotal}
           totalWeight={totalWeight}
           menuTitle={menuTitle}
-          onClose={() => setExportMode(false)}
+          onClose={onModeClose}
         />
       ) : orderMode ? (
-        <OrderView rows={rows} dishes={dishes} servings={servings} onServingsChange={setServings} onClose={() => setOrderMode(false)} />
+        <OrderView rows={rows} dishes={dishes} servings={servings} onServingsChange={setServings} onClose={onModeClose} />
       ) : (
         <>
           <AddCard foods={foods} dishes={dishes} cardRef={addCardRef} draft={addDraft} onDraftChange={setAddDraft} onAdd={addRow} />

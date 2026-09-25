@@ -30,6 +30,7 @@
 | 画面 | ファイル |
 |---|---|
 | 画面の切り替え（一覧 ⇄ 入力 ⇄ 合計 ⇄ 設定） | `src/App.tsx` |
+| 画面ごとのURL（スマホの「戻る」で前の画面へ） | `src/lib/route.ts`（URLと画面の対応表）、`src/hooks/useRoute.ts`（履歴の操作） |
 | 献立一覧（最初の画面） | `src/screens/MenuList.tsx` |
 | 入力画面（材料表） | `src/screens/worksheet/` のフォルダ一式（下の表） |
 | 発注量 | `src/features/order-quantity/OrderView.tsx` |
@@ -60,6 +61,7 @@
 | 材料名の列の幅・折り返し行数 | `src/styles.css` | 「入力用の表（縦持ち）」の見出し。**半分未満・3行以上にはしない**（CLAUDE.md） |
 | 横持ちに切り替わる画面幅 | `src/styles.css` の `@media` と `src/hooks/useMediaQuery.ts` の `WIDE_QUERY` | **2か所を必ず同じ値にする** |
 | 横持ちでツールバーが隠れるまでの秒数 | `src/screens/worksheet/useWideChrome.ts` | `HIDE_AFTER_MS`（ミリ秒。4000 = 4秒） |
+| 画面のURLの形を変える・画面を足す | `src/lib/route.ts` | 先頭の対応表と `parseRoute`・`formatRoute`。`tests/route.test.ts` も足す |
 | アプリ名・アイコン（ホーム画面に追加したとき） | `vite.config.ts` の `manifest`、`public/icon-*.png` | |
 
 ### 表の項目・計算

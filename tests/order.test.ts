@@ -1,12 +1,10 @@
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { orderLine, parseServings } from "../src/core/order";
-import { CURRENT_FOOD_TABLE } from "../src/data/foodTable";
-import { Food, findByCode } from "../src/data/foods";
+import { findByCode } from "../src/data/foods";
 import { normalizeMenu } from "../src/lib/storage/menus";
+import { loadTestFoods } from "./helpers/foods";
 
-const foods = JSON.parse(readFileSync(resolve(__dirname, "../public", CURRENT_FOOD_TABLE.file), "utf8")) as Food[];
+const foods = loadTestFoods();
 const food = (code: string) => findByCode(foods, code)!;
 
 describe("発注量", () => {

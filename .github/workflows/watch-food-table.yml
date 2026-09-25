@@ -1,0 +1,132 @@
+# 成分表（文部科学省）の改訂を検知する。週1回、成分表のページを見て、前回マージした時点の状態
+# （data/mext-tables/watch-baseline.json）から変化があれば、
+#   - 新しい基準（watch-baseline.json の更新）
+#   - 新しい本表 Excel が出ていれば、その取り込み候補（data/mext-tables/candidate-日付/）と差分レポート
+#   - 候補の表で今のテストを回した結果
+# をまとめたドラフトPRを作る。版の切り替え（src/data/foodTable.ts）は人が判断してから行う
+# （手順は docs/food-table-upgrade.md）。PRを作れない設定のリポジトリでは Issue で知らせる。
+name: Watch food table
+
+on:
+  schedule:
+    - cron: "0 0 * * 1" # 毎週月曜 09:00（日本時間）
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: watch-food-table
+  cancel-in-progress: false
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install openpyxl
+
+      # 終了コード 0 = 変化なし、10 = 変化あり、それ以外 = 取得失敗（この実行が失敗扱いになり持ち主に通知が届く）
+      - id: watch
+        run: |
+          set +e
+          python3 scripts/watch_mext.py --out "$RUNNER_TEMP/watch" --candidate
+          code=$?
+          set -e
+          if [ "$code" -eq 0 ]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          elif [ "$code" -eq 10 ]; then
+            digest=$(cat "$RUNNER_TEMP/watch/digest.txt")
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "digest=$digest" >> "$GITHUB_OUTPUT"
+            echo "branch=food-table-watch/$digest" >> "$GITHUB_OUTPUT"
+            if [ -f "$RUNNER_TEMP/watch/candidate/foods.json" ]; then echo "candidate=true" >> "$GITHUB_OUTPUT"; fi
+          else
+            exit "$code"
+          fi
+
+      # 同じ変化について前の週にすでにPR（ブランチ）を作っていれば、作り直さない
+      - id: dedupe
+        if: steps.watch.outputs.changed == 'true'
+        run: |
+          if git ls-remote --exit-code --heads origin "${{ steps.watch.outputs.branch }}" > /dev/null; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "この変化はすでにブランチ ${{ steps.watch.outputs.branch }} で通知済み"
+          fi
+
+      - if: steps.watch.outputs.candidate == 'true' && steps.dedupe.outputs.skip != 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - id: tests
+        if: steps.watch.outputs.candidate == 'true' && steps.dedupe.outputs.skip != 'true'
+        run: |
+          npm ci
+          set +e
+          FOODS_JSON="$RUNNER_TEMP/watch/candidate/foods.json" npx vitest run > "$RUNNER_TEMP/vitest.txt" 2>&1
+          code=$?
+          set -e
+          {
+            echo "## 候補の表で今のテストを回した結果"
+            echo
+            if [ "$code" -eq 0 ]; then echo "すべて通過しました。"; else echo "通らないテストがあります（新しい版で食品番号や名前が変わった箇所の目安）。"; fi
+            echo
+            echo '```'
+            sed 's/\x1b\[[0-9;]*m//g' "$RUNNER_TEMP/vitest.txt" | grep -E "×|FAIL|Test Files|Tests " | head -60
+            echo '```'
+          } > "$RUNNER_TEMP/tests.md"
+
+      - id: pr
+        if: steps.watch.outputs.changed == 'true' && steps.dedupe.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          branch="${{ steps.watch.outputs.branch }}"
+          today=$(date -u +%Y%m%d)
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$branch"
+          cp "$RUNNER_TEMP/watch/snapshot.json" data/mext-tables/watch-baseline.json
+          if [ -f "$RUNNER_TEMP/watch/candidate/foods.json" ]; then
+            mkdir -p "data/mext-tables/candidate-$today"
+            cp -r "$RUNNER_TEMP/watch/candidate/." "data/mext-tables/candidate-$today/"
+          fi
+          git add data/mext-tables
+          git commit -m "成分表のページの変化を検知（${{ steps.watch.outputs.digest }}）"
+          git push -u origin "$branch"
+
+          {
+            cat "$RUNNER_TEMP/watch/changes.md"
+            echo
+            if [ -f "$RUNNER_TEMP/tests.md" ]; then cat "$RUNNER_TEMP/tests.md"; echo; fi
+            echo "## このあとの手順"
+            echo
+            echo "- ページの変化だけ（新しい版ではない）なら、このままマージすると監視の基準が更新され、同じ変化で再び通知されなくなります。"
+            echo "- 新しい版なら、docs/food-table-upgrade.md の手順で版を追加し、src/data/foodTable.ts の CURRENT_FOOD_TABLE を切り替えてからマージします。"
+            echo "- このPRは GitHub Actions が作ったため、CI（テスト）は自動では走りません。上のテスト結果は候補の表で回したものです。"
+            echo
+            echo "（.github/workflows/watch-food-table.yml が自動で作成）"
+          } > "$RUNNER_TEMP/body.md"
+          # PR本文の上限（65,536文字）に収める。文字の途中で切らないよう Python で切る
+          python3 -c "import sys; open(sys.argv[2], 'w').write(open(sys.argv[1]).read()[:60000])" "$RUNNER_TEMP/body.md" "$RUNNER_TEMP/body-trimmed.md"
+
+          title="成分表のページに変化がありました（${today}）"
+          if gh pr create --draft --base main --head "$branch" --title "$title" --body-file "$RUNNER_TEMP/body-trimmed.md"; then
+            echo "ドラフトPRを作成しました"
+          else
+            # 「Actions に PR 作成を許可」が無効なリポジトリでは PR を作れないので、Issue で知らせる
+            {
+              echo "ブランチ \`$branch\` に変更をプッシュしました。PR を作成できなかったため（リポジトリの設定で Actions による PR 作成が無効の可能性）、Issue で知らせます。"
+              echo
+              echo "PR を作る: https://github.com/${{ github.repository }}/compare/main...$branch"
+              echo
+              cat "$RUNNER_TEMP/body-trimmed.md"
+            } > "$RUNNER_TEMP/issue.md"
+            gh issue create --title "$title" --body-file "$RUNNER_TEMP/issue.md"
+          fi

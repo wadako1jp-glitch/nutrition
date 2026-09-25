@@ -1,12 +1,12 @@
 import { existsSync, readFileSync } from "node:fs";
-import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { CURRENT_FOOD_TABLE, FOOD_TABLES, LEGACY_FOOD_TABLE_ID } from "../src/data/foodTable";
+import { FOOD_TABLES, LEGACY_FOOD_TABLE_ID } from "../src/data/foodTable";
 import { normalizeMenu } from "../src/lib/storage/menus";
+import { FOODS_PATH } from "./helpers/foods";
 
 describe("成分表の版", () => {
   it("現行の版のデータファイルが public/ にあり、食品番号が重複していない", () => {
-    const path = resolve(__dirname, "../public", CURRENT_FOOD_TABLE.file);
+    const path = FOODS_PATH;
     expect(existsSync(path)).toBe(true);
     const foods = JSON.parse(readFileSync(path, "utf8")) as { code: string }[];
     expect(foods.length).toBeGreaterThan(0);

@@ -56,7 +56,11 @@ export default function ProfileEdit({ onDone, onCancel }: { onDone: () => void; 
       heightCm: parsePositive(height),
       weightKg: parsePositive(weight),
     };
-    await saveProfile(profile);
+    try {
+      await saveProfile(profile);
+    } catch {
+      return; // 保存できなかった（画面下に注意が出る）。この画面に留まる
+    }
     onDone();
   }
 
@@ -141,7 +145,7 @@ export default function ProfileEdit({ onDone, onCancel }: { onDone: () => void; 
             checked={confirmRowDelete}
             onChange={(e) => {
               setConfirmRowDelete(e.target.checked);
-              saveSettings({ skipRowDeleteConfirm: !e.target.checked });
+              saveSettings({ skipRowDeleteConfirm: !e.target.checked }).catch(() => {});
             }}
           />
           材料を削除するときに確認する（オフにすると×で連続して消せます）

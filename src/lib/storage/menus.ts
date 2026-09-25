@@ -3,7 +3,8 @@
 // 読み込み時に成分表（src/data/foods.ts）から都度解決する（成分表の版が変わっても壊れない）。
 import { Meal, isMeal } from "../../core/menuTitle";
 import { LEGACY_FOOD_TABLE_ID } from "../../data/foodTable";
-import { storage } from "./index";
+import { serialize, storage } from "./index";
+import { askToKeepData } from "./persist";
 
 export interface StoredMenuRow {
   code: string; // 食品番号
@@ -77,17 +78,23 @@ export async function getMenu(id: string): Promise<StoredMenu | undefined> {
   return all.find((m) => m.id === id);
 }
 
-export async function upsertMenu(menu: StoredMenu): Promise<void> {
-  const all = await readAll();
-  const idx = all.findIndex((m) => m.id === menu.id);
-  if (idx >= 0) all[idx] = menu;
-  else all.push(menu);
-  await writeAll(all);
+// 保存・削除は serialize で1つずつ順番に行う（全献立を読んで・直して・書くので、同時に走ると片方の変更が消える）
+export function upsertMenu(menu: StoredMenu): Promise<void> {
+  return serialize(async () => {
+    const all = await readAll();
+    const idx = all.findIndex((m) => m.id === menu.id);
+    if (idx >= 0) all[idx] = menu;
+    else all.push(menu);
+    await writeAll(all);
+    askToKeepData();
+  });
 }
 
-export async function deleteMenu(id: string): Promise<void> {
-  const all = await readAll();
-  await writeAll(all.filter((m) => m.id !== id));
+export function deleteMenu(id: string): Promise<void> {
+  return serialize(async () => {
+    const all = await readAll();
+    await writeAll(all.filter((m) => m.id !== id));
+  });
 }
 
 export function createMenuId(): string {

@@ -39,9 +39,13 @@ export default function MenuList({
   }
 
   async function handleDelete(id: string) {
-    await deleteMenu(id);
+    try {
+      await deleteMenu(id);
+      onSelectedChange(selectedIds.filter((x) => x !== id));
+    } catch {
+      // 削除できなかった（画面下に注意が出る）。一覧は読み直して実際の状態を見せる
+    }
     setConfirmDeleteId(null);
-    onSelectedChange(selectedIds.filter((x) => x !== id));
     refresh();
   }
 

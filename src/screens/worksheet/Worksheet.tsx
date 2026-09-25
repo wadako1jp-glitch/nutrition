@@ -136,7 +136,7 @@ export default function Worksheet({
       };
       await upsertMenu(stored);
       everSavedRef.current = true;
-    })();
+    })().catch(() => {}); // 保存の失敗は画面下の注意（SaveErrorBanner）で知らせる。次の変更でまた保存を試みる
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rows, dishes, menuTitle, servings, loaded]);
 
@@ -278,7 +278,7 @@ export default function Worksheet({
             setConfirmDeleteId(null);
             if (skipNextTime) {
               setSkipDeleteConfirm(true);
-              saveSettings({ skipRowDeleteConfirm: true });
+              saveSettings({ skipRowDeleteConfirm: true }).catch(() => {});
             }
           }}
         />

@@ -61,6 +61,7 @@
 | 材料名の列の幅・折り返し行数 | `src/styles.css` | 「入力用の表（縦持ち）」の見出し。**半分未満・3行以上にはしない**（CLAUDE.md） |
 | 横持ちに切り替わる画面幅 | `src/styles.css` の `@media` と `src/hooks/useMediaQuery.ts` の `WIDE_QUERY` | **2か所を必ず同じ値にする** |
 | 横持ちでツールバーが隠れるまでの秒数 | `src/screens/worksheet/useWideChrome.ts` | `HIDE_AFTER_MS`（ミリ秒。4000 = 4秒） |
+| 保存に失敗したときの注意の文言・見た目 | `src/components/SaveErrorBanner.tsx`、`src/styles.css` | 「保存に失敗したとき」の見出し |
 | 画面のURLの形を変える・画面を足す | `src/lib/route.ts` | 先頭の対応表と `parseRoute`・`formatRoute`。`tests/route.test.ts` も足す |
 | アプリ名・アイコン（ホーム画面に追加したとき） | `vite.config.ts` の `manifest`、`public/icon-*.png` | |
 
@@ -95,7 +96,7 @@
 | `data/mext-tables/<版>/` | 文科省の成分表（元のExcelと、そこから作った `foods.json`） |
 | `public/data/` | アプリが実際に読み込む成分表（上から作ったもの）。オフラインでも使えるよう丸ごと保存される |
 | `data/samples/` | 用紙の写真（学籍番号・氏名が写っているため **GitHubには上げない**。`.gitignore` 済み） |
-| スマホの中 | 献立・プロフィール・設定。保存の仕組みは `src/lib/storage/`（`menus.ts`・`profile.ts`・`settings.ts`） |
+| スマホの中（ブラウザの IndexedDB。同じ内容の控えを localStorage にも） | 献立・プロフィール・設定。何を保存するかは `src/lib/storage/` の `menus.ts`・`profile.ts`・`settings.ts`、どこにどう保存するかは同じフォルダの `index.ts`（流れの説明は先頭のコメント） |
 
 ## 5. 自動で動いているもの（`.github/workflows/`）
 

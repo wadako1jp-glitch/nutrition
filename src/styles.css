@@ -600,3 +600,19 @@ select.dish-chip.empty { border-style: dashed; color: #999; font-weight: 400; ba
 .order-hint { margin-top: 3px; color: #555; font-size: 10px; }
 .order-summary-alert { margin: 0; padding: 6px 8px; background: #fdf1d8; border: 1px solid #b7791f; color: #3d2f10; font-size: 12px; line-height: 1.5; }
 .order-form-note { max-width: 6em; margin-left: auto; font-family: "Zen Kaku Gothic New", system-ui, sans-serif; font-weight: 400; font-size: 10px; color: #6b5a33; white-space: normal; line-height: 1.3; }
+
+/* --- 保存に失敗したときの注意（src/components/SaveErrorBanner.tsx）。画面の下に重ねて出す --- */
+.save-error-banner {
+  position: fixed;
+  left: 8px;
+  right: 8px;
+  bottom: 8px;
+  z-index: 1000;
+  padding: 10px 12px;
+  background: #b3261e;
+  color: #fff;
+  font-size: 13px;
+  line-height: 1.5;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}

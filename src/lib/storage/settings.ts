@@ -1,5 +1,5 @@
 // アプリの設定（端末内に1件）。
-import { storage } from "./index";
+import { serialize, storage } from "./index";
 
 export interface Settings {
   // 材料の削除で確認ポップアップを出さない（削除確認の「次から確認しない」にチェックすると true）
@@ -14,8 +14,10 @@ export async function getSettings(): Promise<Settings> {
   return { ...DEFAULTS, ...(s ?? {}) };
 }
 
-export async function saveSettings(patch: Partial<Settings>): Promise<Settings> {
-  const next = { ...(await getSettings()), ...patch };
-  await storage.set(KEY, next);
-  return next;
+export function saveSettings(patch: Partial<Settings>): Promise<Settings> {
+  return serialize(async () => {
+    const next = { ...(await getSettings()), ...patch };
+    await storage.set(KEY, next);
+    return next;
+  });
 }

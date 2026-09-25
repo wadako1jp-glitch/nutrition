@@ -593,3 +593,10 @@ select.dish-chip.empty { border-style: dashed; color: #999; font-weight: 400; ba
 .order-table .col-order-total { font-weight: 700; background: #fff8e1 !important; }
 .order-table .waste-none { color: #999; }
 .order-table .food-name { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; line-height: 16px; }
+.order-alert { margin-top: 4px; padding: 4px 6px; background: #fdf1d8; border-left: 3px solid #b7791f; color: #3d2f10; font-size: 11px; line-height: 1.45; }
+.order-alert b { font-family: "IBM Plex Mono", Menlo, monospace; }
+.order-alert-tag { display: inline-block; margin-right: 4px; padding: 0 5px; background: #b7791f; color: #fff; font-weight: 700; font-size: 10px; }
+.order-basis { color: #6b5a33; font-size: 10px; }
+.order-hint { margin-top: 3px; color: #555; font-size: 10px; }
+.order-summary-alert { margin: 0; padding: 6px 8px; background: #fdf1d8; border: 1px solid #b7791f; color: #3d2f10; font-size: 12px; line-height: 1.5; }
+.order-form-note { max-width: 6em; margin-left: auto; font-family: "Zen Kaku Gothic New", system-ui, sans-serif; font-weight: 400; font-size: 10px; color: #6b5a33; white-space: normal; line-height: 1.3; }

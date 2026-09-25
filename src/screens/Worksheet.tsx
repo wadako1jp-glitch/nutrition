@@ -278,8 +278,21 @@ export default function Worksheet({
     weightInputRef.current?.focus();
   }
 
+  // 候補のタップが blur より後に届くよう、閉じるのを少し遅らせる。遅らせている間に欄へ戻って
+  // 打ち始めた場合は閉じない（素早く次の食品を打つと候補が出ないことがあったため）
+  const blurCloseTimerRef = useRef<number | null>(null);
+  function cancelBlurClose() {
+    if (blurCloseTimerRef.current !== null) {
+      window.clearTimeout(blurCloseTimerRef.current);
+      blurCloseTimerRef.current = null;
+    }
+  }
   function handleAddNameBlur() {
-    window.setTimeout(() => setAddSearchOpen(false), 150);
+    cancelBlurClose();
+    blurCloseTimerRef.current = window.setTimeout(() => {
+      blurCloseTimerRef.current = null;
+      setAddSearchOpen(false);
+    }, 150);
   }
 
   // 候補一覧の矢印キー操作（↓/↑で移動、Enterで確定、Escで閉じる）
@@ -435,13 +448,17 @@ export default function Worksheet({
                 ref={nameInputRef}
                 value={addQuery}
                 placeholder="食品名 / 番号 / ローマ字（例: shio）"
-                onFocus={() => setAddSearchOpen(true)}
+                onFocus={() => {
+                  cancelBlurClose();
+                  setAddSearchOpen(true);
+                }}
                 onBlur={handleAddNameBlur}
                 onKeyDown={handleNameKeyDown}
                 role="combobox"
                 aria-expanded={addSearchOpen && suggestions.length > 0}
                 aria-autocomplete="list"
                 onChange={(e) => {
+                  cancelBlurClose();
                   setAddQuery(e.target.value);
                   setAddFood(null);
                   setAddSearchOpen(true);

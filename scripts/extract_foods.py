@@ -69,11 +69,48 @@ def waste_part(note) -> str | None:
     return m.group(1).strip() if m else None
 
 
+def raw_equiv(name: str, note) -> dict | None:
+    """めし・かゆ等: 備考「精白米47 g相当量を含む」→ 可食部100 g当たりに含まれる、炊く前の米の重さ。"""
+    if not isinstance(note, str):
+        return None
+    m = re.search(r"([^\s\n、。]*?)\s*(\d+(?:\.\d+)?)\s*g\s*相当量を含む", note)
+    if not m:
+        return None
+    base = m.group(1)
+    if base == "乾":  # おおむぎ 押麦 めし「乾35 g相当量を含む」→「押麦 乾」
+        words = [w for w in name.split("\u3000") if w and not w.startswith(("＜", "（", "［"))]
+        base = "\u3000".join(words[:-1] + ["乾"])
+    return {"label": base, "g_per_100g": float(m.group(2))}
+
+
+def link_derived(foods: list, notes: dict) -> None:
+    """元の食品へのつながりを付ける（発注量で「買う形」を示すため）。
+    - おろし: 備考「全体に対する割合24 %」と、おろす前の食品（名前から「おろし…」を除いたもの）の廃棄率
+    - 皮つき/皮なし: 名前の「皮つき」「皮なし」だけが違う食品の廃棄率
+    """
+    by_name = {f["name"]: f for f in foods}
+    for f in foods:
+        note = notes.get(f["code"]) or ""
+        words = f["name"].split("\u3000")
+        m = re.search(r"全体に対する割合\s*(\d+(?:\.\d+)?)\s*%", note)
+        if m and words[-1].startswith("おろし"):
+            src = by_name.get("\u3000".join(words[:-1]))
+            if src is not None:
+                f["grated"] = {"ratio_pct": float(m.group(1)), "source_code": src["code"],
+                               "source_name": src["name"], "source_waste_pct": src["waste_pct"]}
+        for a, b in (("皮つき", "皮なし"), ("皮なし", "皮つき")):
+            if a in words:
+                alt = by_name.get("\u3000".join(b if w == a else w for w in words))
+                if alt is not None:
+                    f["peel_alt"] = {"code": alt["code"], "label": b, "waste_pct": alt["waste_pct"]}
+
+
 def extract(version: str, xlsx: str, sheet: str, first_row: int, cols: dict, note_col: int) -> list:
     src = ROOT / "data" / "mext-tables" / version / "raw" / xlsx
     wb = openpyxl.load_workbook(src, read_only=True, data_only=True)
     ws = wb[sheet]
     foods = []
+    notes = {}
     for row in ws.iter_rows(min_row=first_row, values_only=True):
         if row[cols["code"]] is None:
             continue
@@ -86,7 +123,13 @@ def extract(version: str, xlsx: str, sheet: str, first_row: int, cols: dict, not
                 f[key] = clean(val)
         # 可食部100g当たりで計算しているので、何を切り捨てた量なのか（廃棄部位）も持っておく
         f["waste_part"] = waste_part(row[note_col])
+        # めし・かゆは炊く前の米の量が備考にある（発注は米で行うため）
+        eq = raw_equiv(f["name"], row[note_col])
+        if eq:
+            f["raw_equiv"] = eq
+        notes[f["code"]] = row[note_col]
         foods.append(f)
+    link_derived(foods, notes)
     return foods
 
 

@@ -1,3 +1,4 @@
+// プロフィール・設定（一覧の⚙）。年齢・性別・身体活動レベルなどと、材料の削除確認の設定を編集する。
 import { useEffect, useState } from "react";
 import { normalizeWeightInput } from "../core/weightInput";
 import { ActivityLevel, Profile, Sex, getProfile, saveProfile } from "../lib/storage/profile";

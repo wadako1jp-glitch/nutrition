@@ -1,3 +1,4 @@
+// 献立一覧（最初の画面）。献立を開く・新しく作る・削除する、合計・充足率に使う献立をチェックで選ぶ。
 import { useEffect, useMemo, useState } from "react";
 import { Food, findByCode, loadFoods } from "../data/foods";
 import { computeRow, round1, sumRows } from "../core/nutrition";

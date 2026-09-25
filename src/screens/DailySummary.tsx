@@ -1,3 +1,4 @@
+// 合計・充足率。一覧でチェックした献立を合算し、食事摂取基準と比べて表示する（判定の計算は src/core/intake.ts）。
 import { useEffect, useState } from "react";
 import { DRI_VERSION } from "../data/dri/2025";
 import { CURRENT_FOOD_TABLE } from "../data/foodTable";

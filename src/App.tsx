@@ -1,3 +1,4 @@
+// 画面の切り替え（献立一覧 ⇄ 入力画面 ⇄ 合計・充足率 ⇄ プロフィール・設定）。どの画面を出すかだけを決める。
 import { useState } from "react";
 import DailySummary from "./screens/DailySummary";
 import MenuList from "./screens/MenuList";

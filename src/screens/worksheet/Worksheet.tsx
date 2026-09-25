@@ -248,8 +248,8 @@ export default function Worksheet({
 
           {unresolvedRows.length > 0 && (
             <p className="note unresolved-note">
-              現在の成分表「{CURRENT_FOOD_TABLE.label}」に見つからない食品が{unresolvedRows.length}件あるため、表に表示していません（食品番号:{" "}
-              {unresolvedRows.map((r) => r.code).join("、")}）。献立データには残っています。
+              現在の成分表「{CURRENT_FOOD_TABLE.label}」に見つからない食品が{unresolvedRows.length}
+              件あるため、表に表示していません（食品番号: {unresolvedRows.map((r) => r.code).join("、")}）。献立データには残っています。
             </p>
           )}
           <SheetTable
@@ -264,7 +264,8 @@ export default function Worksheet({
           />
 
           <p className="note">
-            {CURRENT_FOOD_TABLE.label}ベース・小数第1位で丸め。使用量＝実際に料理で使う可食部の重さとして計算します。行の削除は「×」で確認ポップアップが出ます。入力内容は自動的に保存されます。端末を横にする（画面幅が広い）と全項目を1画面に表示し、画面のタップでツールバー・材料追加を表示／非表示します。
+            {CURRENT_FOOD_TABLE.label}
+            ベース・小数第1位で丸め。使用量＝実際に料理で使う可食部の重さとして計算します。行の削除は「×」で確認ポップアップが出ます。入力内容は自動的に保存されます。端末を横にする（画面幅が広い）と全項目を1画面に表示し、画面のタップでツールバー・材料追加を表示／非表示します。
           </p>
         </>
       )}

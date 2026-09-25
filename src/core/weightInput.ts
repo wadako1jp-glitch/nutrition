@@ -3,9 +3,7 @@
 
 // 全角数字・全角ピリオド/句点を半角に変換する（保存前に必ず通す）
 export function normalizeWeightInput(raw: string): string {
-  return raw
-    .replace(/[０-９]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xfee0))
-    .replace(/[．。]/g, ".");
+  return raw.replace(/[０-９]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xfee0)).replace(/[．。]/g, ".");
 }
 
 // 正の数（整数 or 小数）として妥当か

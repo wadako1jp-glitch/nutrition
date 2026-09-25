@@ -67,10 +67,15 @@ export default function OrderView({
           材料表に戻る
         </button>
       </div>
-      {servingsInvalid && <p className="weight-warning">1〜{MAX_SERVINGS}の整数で入力してください（{servings}人分で計算中）</p>}
+      {servingsInvalid && (
+        <p className="weight-warning">
+          1〜{MAX_SERVINGS}の整数で入力してください（{servings}人分で計算中）
+        </p>
+      )}
       {notPurchaseForm > 0 && (
         <p className="order-summary-alert">
-          {notPurchaseForm}品目は、選んだ食品が調理・加工後の形です（めし・おろし・ゆで等）。発注量の列はその形の重さなので、各行の「買う形」「注意」を確認してください。
+          {notPurchaseForm}
+          品目は、選んだ食品が調理・加工後の形です（めし・おろし・ゆで等）。発注量の列はその形の重さなので、各行の「買う形」「注意」を確認してください。
         </p>
       )}
 
@@ -156,8 +161,7 @@ export default function OrderView({
                           {l.purchase && (
                             <div className="order-form-note">
                               {l.purchase.label.split(" ")[0]}で
-                              <br />
-                              （{l.orderTotal}）
+                              <br />（{l.orderTotal}）
                             </div>
                           )}
                         </td>
@@ -183,7 +187,8 @@ export default function OrderView({
 
       <p className="note">
         発注量 = 使用量 ÷ (1 − 廃棄率/100)。人数分は「使用量×人数」を割り戻して小数第1位で丸めています（使用量の合計 {totalUsed}
-        g）。廃棄率・廃棄部位は{CURRENT_FOOD_TABLE.label}の値で、廃棄部位は成分表の備考欄の記載です。栄養計算は使用量（可食部）で行い、発注量は使いません。
+        g）。廃棄率・廃棄部位は{CURRENT_FOOD_TABLE.label}
+        の値で、廃棄部位は成分表の備考欄の記載です。栄養計算は使用量（可食部）で行い、発注量は使いません。
       </p>
     </div>
   );

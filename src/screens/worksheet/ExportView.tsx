@@ -215,58 +215,58 @@ export default function ExportView({
               <p className="note">材料が入力されていません。</p>
             ) : (
               <table className="sheet-table export-table">
-              <thead>
-                <tr>
-                  <th className="col-name">材料名</th>
-                  <th className="col-weight">
-                    使用量
-                    <br />
-                    (g)
-                  </th>
-                  {NUTRIENT_KEYS.map((k) => (
-                    <th key={k}>
-                      {COLUMN_LABELS[k][0]}
-                      <br />({COLUMN_LABELS[k][1]})
+                <thead>
+                  <tr>
+                    <th className="col-name">材料名</th>
+                    <th className="col-weight">
+                      使用量
+                      <br />
+                      (g)
                     </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {groupRowsByDish(rows, dishes).map((g) => (
-                  <Fragment key={g.dish?.id ?? "unassigned"}>
-                    {g.rows.map(({ row, index: i }) => {
-                      const computed = nutrientRows[i];
-                      return (
-                        <tr key={row.id} style={tintStyle(dishTint(dishes, row.dishId))}>
-                          <td className="col-name">
-                            {row.food.name}
-                            {g.dish && <span className="dish-chip">{g.dish.name}</span>}
-                          </td>
-                          <td className="col-weight num">{row.usedWeight || 0}</td>
-                          {NUTRIENT_KEYS.map((k) => (
-                            <td key={k} className="num">
-                              {computed[k]}
+                    {NUTRIENT_KEYS.map((k) => (
+                      <th key={k}>
+                        {COLUMN_LABELS[k][0]}
+                        <br />({COLUMN_LABELS[k][1]})
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {groupRowsByDish(rows, dishes).map((g) => (
+                    <Fragment key={g.dish?.id ?? "unassigned"}>
+                      {g.rows.map(({ row, index: i }) => {
+                        const computed = nutrientRows[i];
+                        return (
+                          <tr key={row.id} style={tintStyle(dishTint(dishes, row.dishId))}>
+                            <td className="col-name">
+                              {row.food.name}
+                              {g.dish && <span className="dish-chip">{g.dish.name}</span>}
                             </td>
-                          ))}
-                        </tr>
-                      );
-                    })}
-                    {showGroupSubtotal(g, dishes) && (
-                      <GroupSubtotalRow group={g} dishes={dishes} nutrientRows={nutrientRows} withDelColumn={false} />
-                    )}
-                  </Fragment>
-                ))}
-                <tr className="subtotal">
-                  <td className="col-name">{dishes.length ? "献立 小計" : "小計"}</td>
-                  <td className="col-weight num">{totalWeight || ""}</td>
-                  {NUTRIENT_KEYS.map((k) => (
-                    <td key={k} className="num">
-                      {subtotal[k]}
-                    </td>
+                            <td className="col-weight num">{row.usedWeight || 0}</td>
+                            {NUTRIENT_KEYS.map((k) => (
+                              <td key={k} className="num">
+                                {computed[k]}
+                              </td>
+                            ))}
+                          </tr>
+                        );
+                      })}
+                      {showGroupSubtotal(g, dishes) && (
+                        <GroupSubtotalRow group={g} dishes={dishes} nutrientRows={nutrientRows} withDelColumn={false} />
+                      )}
+                    </Fragment>
                   ))}
-                </tr>
-              </tbody>
-            </table>
+                  <tr className="subtotal">
+                    <td className="col-name">{dishes.length ? "献立 小計" : "小計"}</td>
+                    <td className="col-weight num">{totalWeight || ""}</td>
+                    {NUTRIENT_KEYS.map((k) => (
+                      <td key={k} className="num">
+                        {subtotal[k]}
+                      </td>
+                    ))}
+                  </tr>
+                </tbody>
+              </table>
             )}
           </div>
 

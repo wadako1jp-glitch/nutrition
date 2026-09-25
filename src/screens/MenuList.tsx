@@ -158,8 +158,7 @@ function MenuListItem({
       <button type="button" className="menu-item-main" onClick={onOpen}>
         <span className="menu-item-title">{menu.title}</span>
         <span className="menu-item-meta">
-          材料{menu.rows.length}点
-          {summary ? ` ・ 合計${summary.kcal}kcal ・ ${summary.totalWeight}g` : ""} ・ 更新 {updated}
+          材料{menu.rows.length}点{summary ? ` ・ 合計${summary.kcal}kcal ・ ${summary.totalWeight}g` : ""} ・ 更新 {updated}
         </span>
       </button>
       <button type="button" className="menu-item-del" onClick={onDelete} aria-label="削除">

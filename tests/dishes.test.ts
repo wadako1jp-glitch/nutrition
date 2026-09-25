@@ -54,7 +54,12 @@ describe("料理タグ", () => {
     const groups = groupRowsByDish(rows, dishes);
     expect(groups.map((g) => g.dish?.name ?? "未割当")).toEqual(["主食", "主菜", "未割当"]);
     expect(groups[1].rows.map((x) => x.row.code)).toEqual(["r0", "r3"]);
-    expect(groupRowsByDish(rows.filter((r) => r.dishId), dishes).some((g) => g.dish === null)).toBe(false);
+    expect(
+      groupRowsByDish(
+        rows.filter((r) => r.dishId),
+        dishes,
+      ).some((g) => g.dish === null),
+    ).toBe(false);
   });
 
   it("未割当はハイライトなし、タグごとに別の色で、他のタグの有無で色が変わらない", () => {

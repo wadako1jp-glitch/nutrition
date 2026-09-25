@@ -163,11 +163,7 @@ export default function AddCard({
             ))}
             {hasMoreSuggestions && (
               <li className="suggestions-more">
-                <button
-                  type="button"
-                  onMouseDown={(e) => e.preventDefault()}
-                  onClick={() => setSuggestLimit((n) => n + SUGGEST_PAGE_SIZE)}
-                >
+                <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => setSuggestLimit((n) => n + SUGGEST_PAGE_SIZE)}>
                   候補をもっと見る（残り{allSuggestions.length - suggestions.length}件）
                 </button>
               </li>

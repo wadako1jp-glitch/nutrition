@@ -112,9 +112,7 @@ export default function SheetTable({
                     </Fragment>
                   );
                 })}
-                {showGroupSubtotal(g, dishes) && (
-                  <GroupSubtotalRow group={g} dishes={dishes} nutrientRows={nutrientRows} withDelColumn />
-                )}
+                {showGroupSubtotal(g, dishes) && <GroupSubtotalRow group={g} dishes={dishes} nutrientRows={nutrientRows} withDelColumn />}
               </Fragment>
             ))}
             <tr className="subtotal">

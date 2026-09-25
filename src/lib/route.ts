@@ -12,6 +12,8 @@
 
 export type WorksheetMode = "sheet" | "order" | "image"; // 材料表 / 発注量 / 画像用表示
 
+// 1行に1画面で書いておく（Prettier に1行へ詰められないようにしている）
+// prettier-ignore
 export type Route =
   | { name: "list" }
   | { name: "edit"; menuId: string; mode: WorksheetMode }

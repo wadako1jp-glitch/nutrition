@@ -31,8 +31,11 @@ export class IndexedDbBackend implements Storage {
       };
       req.onsuccess = () => {
         clearTimeout(timer);
-        if (settled) req.result.close(); // 時間切れの後に開けても使わない
-        else resolve(new IndexedDbBackend(req.result));
+        if (settled) {
+          req.result.close(); // 時間切れの後に開けても使わない
+        } else {
+          resolve(new IndexedDbBackend(req.result));
+        }
       };
       req.onerror = () => {
         clearTimeout(timer);

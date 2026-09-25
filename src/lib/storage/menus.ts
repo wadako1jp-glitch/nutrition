@@ -3,7 +3,7 @@
 // 読み込み時に成分表（src/data/foods.ts）から都度解決する（成分表の版が変わっても壊れない）。
 import { Meal, isMeal } from "../../core/menuTitle";
 import { LEGACY_FOOD_TABLE_ID } from "../../data/foodTable";
-import { serialize, storage } from "./index";
+import { storage } from "./index";
 import { askToKeepData } from "./persist";
 
 export interface StoredMenuRow {
@@ -58,13 +58,12 @@ export function normalizeMenu(raw: unknown): StoredMenu {
   };
 }
 
-async function readAll(): Promise<StoredMenu[]> {
-  const list = await storage.get<unknown[]>(KEY);
+function toMenus(list: unknown[] | null): StoredMenu[] {
   return Array.isArray(list) ? list.map(normalizeMenu) : [];
 }
 
-async function writeAll(menus: StoredMenu[]): Promise<void> {
-  await storage.set(KEY, menus);
+async function readAll(): Promise<StoredMenu[]> {
+  return toMenus(await storage.get<unknown[]>(KEY));
 }
 
 // 一覧表示用。更新が新しい順。
@@ -78,23 +77,16 @@ export async function getMenu(id: string): Promise<StoredMenu | undefined> {
   return all.find((m) => m.id === id);
 }
 
-// 保存・削除は serialize で1つずつ順番に行う（全献立を読んで・直して・書くので、同時に走ると片方の変更が消える）
-export function upsertMenu(menu: StoredMenu): Promise<void> {
-  return serialize(async () => {
-    const all = await readAll();
-    const idx = all.findIndex((m) => m.id === menu.id);
-    if (idx >= 0) all[idx] = menu;
-    else all.push(menu);
-    await writeAll(all);
-    askToKeepData();
+export async function upsertMenu(menu: StoredMenu): Promise<void> {
+  await storage.update<unknown[]>(KEY, (list) => {
+    const all = toMenus(list);
+    return all.some((m) => m.id === menu.id) ? all.map((m) => (m.id === menu.id ? menu : m)) : [...all, menu];
   });
+  askToKeepData();
 }
 
-export function deleteMenu(id: string): Promise<void> {
-  return serialize(async () => {
-    const all = await readAll();
-    await writeAll(all.filter((m) => m.id !== id));
-  });
+export async function deleteMenu(id: string): Promise<void> {
+  await storage.update<unknown[]>(KEY, (list) => toMenus(list).filter((m) => m.id !== id));
 }
 
 export function createMenuId(): string {

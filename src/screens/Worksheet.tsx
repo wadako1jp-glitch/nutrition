@@ -1,5 +1,4 @@
 import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { toBlob } from "html-to-image";
 import type { CSSProperties, MouseEvent as ReactMouseEvent, KeyboardEvent as ReactKeyboardEvent } from "react";
 import {
   Dish,
@@ -28,6 +27,8 @@ import {
 import { StoredMenu, StoredMenuRow, createMenuId, deleteMenu, getMenu, upsertMenu } from "../lib/storage/menus";
 import { CURRENT_FOOD_TABLE } from "../data/foodTable";
 import OrderView from "../features/order-quantity/OrderView";
+import { buildExportSheet } from "../features/export-image/exportSheet";
+import { exportSheetToPng } from "../features/export-image/drawExportSheet";
 import { MEALS, Meal, guessMeal, menuDateStamp, menuTitle as buildMenuTitle } from "../core/menuTitle";
 import { getSettings, saveSettings } from "../lib/storage/settings";
 import { WIDE_QUERY, useMediaQuery } from "../hooks/useMediaQuery";
@@ -761,6 +762,7 @@ function ExportView({
   onClose: () => void;
 }) {
   const today = new Date().toLocaleDateString("ja-JP", { year: "numeric", month: "long", day: "numeric" });
+  const subtitle = `${today} 作成・栄養計算アプリ（${CURRENT_FOOD_TABLE.shortLabel}・計算上の目安）`;
   const frameRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const [layout, setLayout] = useState<ExportLayout | null>(null);
@@ -831,25 +833,24 @@ function ExportView({
     if (!layout) return;
     let cancelled = false;
     setImageReady(false);
+    // 画面の表を写し取るのではなく、同じ中身を Canvas に直接描く（src/features/export-image/）。
+    // 以前の写し取り方式はスマホで数秒かかり、その間画面が固まっていた。
     const timer = window.setTimeout(async () => {
-      const el = contentRef.current;
-      if (!el) return;
       try {
-        const blob = await toBlob(el, {
-          pixelRatio: 2,
-          backgroundColor: "#ffffff",
-          width: layout.cw,
-          height: layout.ch,
-          // 画面上の縮尺・センタリング用の位置指定を外して、素の大きさ・左上起点で撮る
-          style: { transform: "none", position: "static", left: "auto", top: "auto", margin: "0" },
+        const sheet = buildExportSheet({
+          rows: rows.map((r, i) => ({ foodName: r.food.name, usedWeight: r.usedWeight, dishId: r.dishId, nutrients: nutrientRows[i] })),
+          dishes,
+          title: menuTitle || "（献立名未入力）",
+          subtitle,
         });
+        const blob = await exportSheetToPng(sheet);
         if (cancelled || !blob) return;
         imageFileRef.current = new File([blob], `${menuTitle || "献立"}.png`, { type: "image/png" });
         setImageReady(true);
       } catch {
         /* 画像化に失敗しても表示（スクショ）はそのまま使える */
       }
-    }, 300);
+    }, 0);
     return () => {
       cancelled = true;
       window.clearTimeout(timer);
@@ -913,7 +914,7 @@ function ExportView({
           >
             <div className="export-head">
               <div className="export-title">{menuTitle || "（献立名未入力）"}</div>
-              <div className="export-date">{today} 作成・栄養計算アプリ（{CURRENT_FOOD_TABLE.shortLabel}・計算上の目安）</div>
+              <div className="export-date">{subtitle}</div>
             </div>
 
             {rows.length === 0 ? (

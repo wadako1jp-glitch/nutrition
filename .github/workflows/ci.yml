@@ -26,3 +26,14 @@ jobs:
       - run: npm test
       # tsc -b（型チェック）→ vite build。PWA のプリキャッシュ生成もここで失敗すれば分かる
       - run: npm run build
+
+  # 成分表の取り込み・差分・改訂検知ツール（scripts/*.py）のテスト
+  python-tools:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install openpyxl
+      - run: python3 -m unittest discover -s tests/python -v

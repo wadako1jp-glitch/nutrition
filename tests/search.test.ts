@@ -1,11 +1,9 @@
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { FOOD_ALIASES } from "../src/data/foodAliases";
-import { CURRENT_FOOD_TABLE } from "../src/data/foodTable";
-import { Food, expandAliases, normalizeKana, searchFoods } from "../src/data/foods";
+import { expandAliases, normalizeKana, searchFoods } from "../src/data/foods";
+import { loadTestFoods } from "./helpers/foods";
 
-const foods = JSON.parse(readFileSync(resolve(__dirname, "../public", CURRENT_FOOD_TABLE.file), "utf8")) as Food[];
+const foods = loadTestFoods();
 
 function top(query: string): string {
   return searchFoods(foods, query, 1)[0]?.food.name.replace(/　/g, "") ?? "(0件)";

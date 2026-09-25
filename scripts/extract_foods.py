@@ -2,14 +2,19 @@
 
 版ごとに data/mext-tables/<版>/raw/ に配布ファイルを置き、次のように実行する（引数なしは現行の八訂・増補2023）:
 
-    python3 scripts/extract_foods.py --version 2023_増補 \
-        --xlsx 20260327-mxt_kagsei-mext-000029402_02.xlsx --public-name foods.2023-zouho.json
+    python3 scripts/extract_foods.py --version 2023_増補
 
 出力:
   - data/mext-tables/<版>/foods.json   … 版ごとの保管用
   - public/data/<public-name>          … アプリが実際に配信・読み込むファイル（src/data/foodTable.ts の file と揃える）
 
-改訂版で列の並びが変わった場合は COLS を版ごとに用意する。手順は docs/food-table-upgrade.md を参照。
+新しい版の候補を取り込むだけなら（配信ファイルは書かない）:
+
+    python3 scripts/extract_foods.py --xlsx-path 新しい.xlsx --out 候補/foods.json
+
+列は位置ではなく、Excelの「成分識別子」行（ENERC_KCAL・PROT- など国際的な識別子）と
+見出し（食品番号・食品名・備考など）で探す。改訂で列の並びが変わっても追従できる。
+手順は docs/food-table-upgrade.md を参照。
 """
 import argparse
 import json
@@ -20,22 +25,83 @@ import openpyxl
 
 ROOT = Path(__file__).resolve().parent.parent
 
-# 版 -> 取り込み設定。シート名・見出し行数・列位置（0始まり）は配布ファイルの形式に合わせる
+# 版 -> 配布ファイル名と配信ファイル名
 TABLES = {
     "2023_増補": {
         "xlsx": "20260327-mxt_kagsei-mext-000029402_02.xlsx",
         "public_name": "foods.2023-zouho.json",
-        "sheet": "表全体",
-        "first_row": 13,
-        "cols": {
-            "group": 0, "code": 1, "index": 2, "name": 3, "waste_pct": 4,
-            "kcal": 6, "protein_g": 9, "fat_g": 12, "carb_g": 20, "fiber_g": 18,
-            "ca_mg": 25, "fe_mg": 28, "va_ugRAE": 42, "vd_ug": 43,
-            "vb1_mg": 49, "vb2_mg": 50, "vc_mg": 58, "salt_g": 60,
-        },
-        "note_col": 61,  # 備考。「廃棄部位： …」の行から廃棄部位を取り出す
     },
 }
+
+# アプリの項目 -> Excelの成分識別子（INFOODS タグ名）
+IDENTIFIERS = {
+    "waste_pct": "REFUSE",
+    "kcal": "ENERC_KCAL",
+    "protein_g": "PROT-",
+    "fat_g": "FAT-",
+    "carb_g": "CHOCDF-",
+    "fiber_g": "FIB-",
+    "ca_mg": "CA",
+    "fe_mg": "FE",
+    "va_ugRAE": "VITA_RAE",
+    "vd_ug": "VITD",
+    "vb1_mg": "THIA",
+    "vb2_mg": "RIBF",
+    "vc_mg": "VITC",
+    "salt_g": "NACL_EQ",
+}
+# アプリの項目 -> 見出しの文字（空白を除いて比べる）
+HEADINGS = {"group": "食品群", "code": "食品番号", "index": "索引番号", "name": "食品名", "note": "備考"}
+# JSON の項目の並び（既存の JSON と同じ順に保つ）
+KEY_ORDER = ["group", "code", "index", "name", "waste_pct", "kcal", "protein_g", "fat_g", "carb_g", "fiber_g",
+             "ca_mg", "fe_mg", "va_ugRAE", "vd_ug", "vb1_mg", "vb2_mg", "vc_mg", "salt_g"]
+
+
+class LayoutError(Exception):
+    pass
+
+
+def _plain(v) -> str:
+    return re.sub(r"\s+", "", str(v)) if v is not None else ""
+
+
+def detect_layout(ws, scan_rows: int = 40) -> dict:
+    """見出し行と成分識別子行から列の位置を割り出す。見つからなければ LayoutError。"""
+    rows = list(ws.iter_rows(min_row=1, max_row=scan_rows, values_only=True))
+    id_row = None
+    for i, r in enumerate(rows):
+        if any(_plain(v) == "ENERC_KCAL" for v in r):
+            id_row = i
+            break
+    if id_row is None:
+        raise LayoutError("成分識別子の行（ENERC_KCAL を含む行）が見つかりません")
+    ids = {_plain(v): j for j, v in enumerate(rows[id_row]) if _plain(v)}
+    cols = {}
+    for key, ident in IDENTIFIERS.items():
+        if ident not in ids:
+            raise LayoutError(f"成分識別子 {ident}（{key}）の列が見つかりません")
+        cols[key] = ids[ident]
+    for key, heading in HEADINGS.items():
+        found = [j for r in rows[:id_row] for j, v in enumerate(r) if _plain(v) == heading]
+        if not found:
+            raise LayoutError(f"見出し「{heading}」の列が見つかりません")
+        cols[key] = found[0]
+    note_col = cols.pop("note")
+    return {"cols": cols, "note_col": note_col, "first_row": id_row + 2}  # iter_rows は1始まり
+
+
+def find_sheet(wb):
+    """成分表の本表のシートを返す（「表全体」を優先、無ければ列を割り出せる最初のシート）。"""
+    names = ["表全体"] + [n for n in wb.sheetnames if n != "表全体"]
+    errors = []
+    for n in names:
+        if n not in wb.sheetnames:
+            continue
+        try:
+            return wb[n], detect_layout(wb[n])
+        except LayoutError as e:
+            errors.append(f"{n}: {e}")
+    raise LayoutError("成分表の本表が見つかりません（" + " / ".join(errors[:3]) + "）")
 
 
 def clean(v):
@@ -105,18 +171,18 @@ def link_derived(foods: list, notes: dict) -> None:
                     f["peel_alt"] = {"code": alt["code"], "label": b, "waste_pct": alt["waste_pct"]}
 
 
-def extract(version: str, xlsx: str, sheet: str, first_row: int, cols: dict, note_col: int) -> list:
-    src = ROOT / "data" / "mext-tables" / version / "raw" / xlsx
+def extract(src: Path) -> list:
     wb = openpyxl.load_workbook(src, read_only=True, data_only=True)
-    ws = wb[sheet]
+    ws, layout = find_sheet(wb)
+    cols, note_col = layout["cols"], layout["note_col"]
     foods = []
     notes = {}
-    for row in ws.iter_rows(min_row=first_row, values_only=True):
-        if row[cols["code"]] is None:
+    for row in ws.iter_rows(min_row=layout["first_row"], values_only=True):
+        if len(row) <= cols["code"] or row[cols["code"]] is None:
             continue
         f = {}
-        for key, idx in cols.items():
-            val = row[idx]
+        for key in KEY_ORDER:
+            val = row[cols[key]]
             if key in ("group", "code", "index", "name"):
                 f[key] = val
             else:
@@ -133,29 +199,30 @@ def extract(version: str, xlsx: str, sheet: str, first_row: int, cols: dict, not
     return foods
 
 
+def write_json(foods: list, out: Path) -> None:
+    out.parent.mkdir(parents=True, exist_ok=True)
+    with open(out, "w", encoding="utf-8") as fp:
+        json.dump(foods, fp, ensure_ascii=False, indent=0)
+    print(f"wrote {len(foods)} foods -> {out}")
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--version", default="2023_増補", choices=sorted(TABLES))
-    parser.add_argument("--xlsx", help="raw/ 配下の配布Excelのファイル名（省略時は TABLES の既定値）")
-    parser.add_argument("--public-name", help="public/data/ に書き出すファイル名（省略時は TABLES の既定値）")
+    parser.add_argument("--xlsx-path", help="任意の配布Excel（新しい版の候補など）。指定時は --out に書き出し、配信ファイルは書かない")
+    parser.add_argument("--out", help="--xlsx-path の出力先（foods.json）")
     args = parser.parse_args()
 
+    if args.xlsx_path:
+        if not args.out:
+            parser.error("--xlsx-path には --out が必要です")
+        write_json(extract(Path(args.xlsx_path)), Path(args.out))
+        return
+
     conf = TABLES[args.version]
-    foods = extract(args.version, args.xlsx or conf["xlsx"], conf["sheet"], conf["first_row"], conf["cols"], conf["note_col"])
-
-    outs = [
-        ROOT / "data" / "mext-tables" / args.version / "foods.json",
-        ROOT / "public" / "data" / (args.public_name or conf["public_name"]),
-    ]
-    for out in outs:
-        out.parent.mkdir(parents=True, exist_ok=True)
-        with open(out, "w", encoding="utf-8") as fp:
-            json.dump(foods, fp, ensure_ascii=False, indent=0)
-        print(f"wrote {len(foods)} foods -> {out.relative_to(ROOT)}")
-
-    for target in ["食塩", "上白糖", "調合油"]:
-        hit = [f for f in foods if f["name"] == target]
-        print(target, "->", hit[0] if hit else "NOT FOUND")
+    foods = extract(ROOT / "data" / "mext-tables" / args.version / "raw" / conf["xlsx"])
+    for out in (ROOT / "data" / "mext-tables" / args.version / "foods.json", ROOT / "public" / "data" / conf["public_name"]):
+        write_json(foods, out)
 
 
 if __name__ == "__main__":

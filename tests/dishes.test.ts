@@ -79,6 +79,7 @@ describe("献立データの後方互換", () => {
       id: "m1",
       title: "献立1",
       meal: null,
+      titleMode: "fixed", // 旧い献立の献立名は勝手に変えない
       foodTable: "2023_増補",
       servings: 1,
       dishes: [],

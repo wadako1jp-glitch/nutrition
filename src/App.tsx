@@ -2,7 +2,7 @@ import { useState } from "react";
 import DailySummary from "./screens/DailySummary";
 import MenuList from "./screens/MenuList";
 import ProfileEdit from "./screens/ProfileEdit";
-import Worksheet from "./screens/Worksheet";
+import Worksheet from "./screens/worksheet/Worksheet";
 
 type View =
   | { name: "list" }

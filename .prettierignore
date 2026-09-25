@@ -1,0 +1,7 @@
+# 見た目（CSS）は1ルール1行の詰めた書き方で一覧しやすくしているので、Prettier の整形対象から外す
+src/styles.css
+dist
+dev-dist
+public
+data
+package-lock.json

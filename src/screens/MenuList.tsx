@@ -27,6 +27,8 @@ export default function MenuList({
   useEffect(() => {
     loadFoods().then(setFoods);
     refresh();
+    // 開いたときに1回だけ読み込む（以降は削除のたびに refresh を呼ぶ）
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function refresh() {

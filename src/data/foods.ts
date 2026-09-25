@@ -109,7 +109,7 @@ export function katakanaToHiragana(s: string): string {
 // 検索用の正規化（空白は残す）: 全角英数字→半角、半角カナ→全角カナ、カタカナ→ひらがな、記号除去。
 function normalizeKeepSpaces(s: string): string {
   const widthNormalized = halfKanaToFullKana(toHalfWidthAscii(s));
-  return katakanaToHiragana(widthNormalized).replace(/[・（）()［］\[\]<>＜＞]/g, "");
+  return katakanaToHiragana(widthNormalized).replace(/[・（）()［］[\]<>＜＞]/g, "");
 }
 
 export function normalizeKana(s: string): string {

@@ -39,7 +39,8 @@ export function useWideChrome() {
   function handlePageClick(e: ReactMouseEvent<HTMLDivElement>) {
     if (!wide) return;
     const target = e.target as HTMLElement;
-    if (target.closest("button, input, select, textarea, label, a, .topbar, .add-card, .confirm-overlay, .export-overlay, .order-view")) return;
+    if (target.closest("button, input, select, textarea, label, a, .topbar, .add-card, .confirm-overlay, .export-overlay, .order-view"))
+      return;
     setChromeShown((v) => !v);
   }
 

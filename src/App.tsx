@@ -47,13 +47,7 @@ function Screens() {
   }
 
   if (route.name === "summary") {
-    return (
-      <DailySummary
-        menuIds={route.menuIds}
-        onBack={() => goBack(LIST_ROUTE)}
-        onEditProfile={() => navigate({ name: "profile" })}
-      />
-    );
+    return <DailySummary menuIds={route.menuIds} onBack={() => goBack(LIST_ROUTE)} onEditProfile={() => navigate({ name: "profile" })} />;
   }
 
   return (

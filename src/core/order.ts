@@ -32,7 +32,20 @@ export interface OrderLine {
 
 // 食品名の最後の語が調理後の状態を表すもの。発注量は「その状態の重さ」になり、買う量とは違う。
 // 重量変化の倍率は成分表の備考に無く「調理による重量変化率表」が必要なため、換算はせず注意だけ出す。
-const COOKED_STATES = ["ゆで", "水煮", "焼き", "蒸し", "油いため", "ソテー", "素揚げ", "天ぷら", "フライ", "電子レンジ調理", "水戻し", "塩抜き"];
+const COOKED_STATES = [
+  "ゆで",
+  "水煮",
+  "焼き",
+  "蒸し",
+  "油いため",
+  "ソテー",
+  "素揚げ",
+  "天ぷら",
+  "フライ",
+  "電子レンジ調理",
+  "水戻し",
+  "塩抜き",
+];
 
 function nameWords(food: Food): string[] {
   return food.name.split("　").filter(Boolean);
@@ -60,7 +73,10 @@ function purchaseForm(food: Food, usedPerPerson: number, servings: number): Purc
     const srcWaste = cellValue(source_waste_pct) ?? 0;
     const before = (w: number) => (w * 100) / ratio_pct; // おろす前（可食部）の重さ
     return {
-      label: source_name.split("　").filter((w) => !/^[（＜［]/.test(w)).join(" "),
+      label: source_name
+        .split("　")
+        .filter((w) => !/^[（＜［]/.test(w))
+        .join(" "),
       perPerson: purchaseWeight(before(usedPerPerson), srcWaste),
       total: purchaseWeight(before(usedPerPerson * servings), srcWaste),
       basis: `成分表の備考「全体に対する割合${ratio_pct}%」と、おろす前の食品の廃棄率${srcWaste}%`,

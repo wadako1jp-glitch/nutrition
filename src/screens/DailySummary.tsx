@@ -116,7 +116,8 @@ export default function DailySummary({
               </button>
               {reference.activityFallback && (
                 <span className="profile-sub">
-                  ※この年齢区分では身体活動レベル{ACTIVITY_LABEL[profile!.activityLevel]}の値が策定されていないため「ふつう」で計算しています。
+                  ※この年齢区分では身体活動レベル{ACTIVITY_LABEL[profile!.activityLevel]}
+                  の値が策定されていないため「ふつう」で計算しています。
                 </span>
               )}
             </div>
@@ -157,7 +158,8 @@ export default function DailySummary({
       )}
 
       <p className="note dri-note">
-        基準値は{DRI_VERSION}による。食事摂取基準（2025年版）は七訂成分表に基づいて策定されています。本アプリは{CURRENT_FOOD_TABLE.label}で計算しているため、エネルギーおよびエネルギー産生栄養素（たんぱく質・脂質・炭水化物）について、基準値との間に測定法由来の差が生じます。参考値として扱ってください。
+        基準値は{DRI_VERSION}による。食事摂取基準（2025年版）は七訂成分表に基づいて策定されています。本アプリは{CURRENT_FOOD_TABLE.label}
+        で計算しているため、エネルギーおよびエネルギー産生栄養素（たんぱく質・脂質・炭水化物）について、基準値との間に測定法由来の差が生じます。参考値として扱ってください。
       </p>
     </div>
   );
@@ -186,10 +188,7 @@ function IntakeItem({ ev }: { ev: IntakeEvaluation }) {
         <div className="bar-fill" style={{ width: `${barWidth}%` }} />
         {/* 基準（100%）の位置。range は目標範囲の帯を描く */}
         {ev.kind === "range" && ev.rangeLowerPercent !== undefined ? (
-          <div
-            className="bar-band"
-            style={{ left: `${ev.rangeLowerPercent / 1.5}%`, width: `${(100 - ev.rangeLowerPercent) / 1.5}%` }}
-          />
+          <div className="bar-band" style={{ left: `${ev.rangeLowerPercent / 1.5}%`, width: `${(100 - ev.rangeLowerPercent) / 1.5}%` }} />
         ) : null}
         <div className="bar-mark" style={{ left: `${100 / 1.5}%` }} />
       </div>

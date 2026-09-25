@@ -116,7 +116,8 @@ export default function ProfileEdit({ onDone, onCancel }: { onDone: () => void; 
         <label className="form-field">
           <span className="form-label">身長（任意）</span>
           <span className="form-input-unit">
-            <input value={height} inputMode="decimal" onChange={(e) => setHeight(e.target.value)} />cm
+            <input value={height} inputMode="decimal" onChange={(e) => setHeight(e.target.value)} />
+            cm
           </span>
           {heightError && <span className="weight-warning">{heightError}</span>}
         </label>
@@ -124,7 +125,8 @@ export default function ProfileEdit({ onDone, onCancel }: { onDone: () => void; 
         <label className="form-field">
           <span className="form-label">体重（任意）</span>
           <span className="form-input-unit">
-            <input value={weight} inputMode="decimal" onChange={(e) => setWeight(e.target.value)} />kg
+            <input value={weight} inputMode="decimal" onChange={(e) => setWeight(e.target.value)} />
+            kg
           </span>
           {weightError && <span className="weight-warning">{weightError}</span>}
         </label>

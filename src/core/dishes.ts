@@ -24,8 +24,7 @@ export function ensureDish(dishes: Dish[], rawName: string, id: string = createD
   const existing = dishes.find((d) => d.name === name);
   if (existing) return { ok: true, dishes, id: existing.id };
   const presetIndex = (DISH_PRESETS as readonly string[]).indexOf(name);
-  const order =
-    presetIndex >= 0 ? presetIndex : Math.max(DISH_PRESETS.length - 1, ...dishes.map((d) => d.order)) + 1;
+  const order = presetIndex >= 0 ? presetIndex : Math.max(DISH_PRESETS.length - 1, ...dishes.map((d) => d.order)) + 1;
   return { ok: true, dishes: [...dishes, { id, name, order }], id };
 }
 
@@ -62,9 +61,7 @@ export function groupRowsByDish<R extends { dishId: string | null }>(rows: R[], 
     if (members.length) groups.push({ dish, rows: members });
   }
   const known = new Set(dishes.map((d) => d.id));
-  const unassigned = rows
-    .map((row, index) => ({ row, index }))
-    .filter((x) => x.row.dishId === null || !known.has(x.row.dishId));
+  const unassigned = rows.map((row, index) => ({ row, index })).filter((x) => x.row.dishId === null || !known.has(x.row.dishId));
   if (unassigned.length) groups.push({ dish: null, rows: unassigned });
   return groups;
 }

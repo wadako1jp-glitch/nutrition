@@ -30,12 +30,7 @@ export interface ExportSheet {
 
 const num = (n: number) => String(n);
 
-export function buildExportSheet(input: {
-  rows: ExportInputRow[];
-  dishes: Dish[];
-  title: string;
-  subtitle: string;
-}): ExportSheet {
+export function buildExportSheet(input: { rows: ExportInputRow[]; dishes: Dish[]; title: string; subtitle: string }): ExportSheet {
   const header: [string, string][] = [
     ["材料名", ""],
     ["使用量", "(g)"],

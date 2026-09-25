@@ -23,6 +23,10 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      # 書き方の自動チェック（eslint.config.js）と書式のチェック（.prettierrc.json）。
+      # 書式で落ちたら、手元で npm run format を実行してコミットし直せば直る
+      - run: npm run lint
+      - run: npm run format:check
       - run: npm test
       # tsc -b（型チェック）→ vite build。PWA のプリキャッシュ生成もここで失敗すれば分かる
       - run: npm run build

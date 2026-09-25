@@ -96,7 +96,7 @@
 | `data/mext-tables/<版>/` | 文科省の成分表（元のExcelと、そこから作った `foods.json`） |
 | `public/data/` | アプリが実際に読み込む成分表（上から作ったもの）。オフラインでも使えるよう丸ごと保存される |
 | `data/samples/` | 用紙の写真（学籍番号・氏名が写っているため **GitHubには上げない**。`.gitignore` 済み） |
-| スマホの中（ブラウザの IndexedDB。同じ内容の控えを localStorage にも） | 献立・プロフィール・設定。何を保存するかは `src/lib/storage/` の `menus.ts`・`profile.ts`・`settings.ts`、どこにどう保存するかは同じフォルダの `index.ts`（流れの説明は先頭のコメント） |
+| スマホの中（ブラウザの localStorage） | 献立・プロフィール・設定。何を保存するかは `src/lib/storage/` の `menus.ts`・`profile.ts`・`settings.ts`、どう保存するかは同じフォルダの `index.ts` |
 
 ## 5. 自動で動いているもの（`.github/workflows/`）
 

@@ -1,7 +1,7 @@
 // 献立の保存・一覧・編集・削除。既存の永続化抽象層（src/lib/storage/index.ts）の上に薄く実装する。
 // CLAUDE.md「技術スタック」参照。データ本体は食品コード＋使用量のみ持ち、食品名や成分値は
 // 読み込み時に成分表（src/data/foods.ts）から都度解決する（成分表の版が変わっても壊れない）。
-import { Meal, isMeal } from "../../core/menuTitle";
+import { Meal, isMeal, menuTitle } from "../../core/menuTitle";
 import { LEGACY_FOOD_TABLE_ID } from "../../data/foodTable";
 import { storage } from "./index";
 import { askToKeepData } from "./persist";
@@ -22,7 +22,9 @@ export interface StoredDish {
 export interface StoredMenu {
   id: string;
   title: string; // 「yyyymmdd_朝食」形式（menuTitle で生成）。旧版の自由入力の献立名はそのまま残る
-  meal: Meal | null; // 献立名の食事区分。null = 旧版の献立（自由入力の献立名）
+  meal: Meal | null; // 食事区分。料理名を推定できないときの献立名に使う。null = 旧版の献立（自由入力の献立名）
+  // auto = 材料から推定した料理名に付け替え続ける / fixed = 選んだ名前のまま。項目が無い旧い献立は fixed
+  titleMode: "auto" | "fixed";
   // 作成時の成分表の版（src/data/foodTable.ts の id）。食品番号の意味は版ごとに違い得るため、
   // 改訂版への切り替え時に「どの版の番号か」を判別できるよう記録しておく
   foodTable: string;
@@ -41,10 +43,15 @@ export function normalizeMenu(raw: unknown): StoredMenu {
   const m = raw as Partial<StoredMenu> & { rows?: Partial<StoredMenuRow>[] };
   const dishes = Array.isArray(m.dishes) ? m.dishes : [];
   const dishIds = new Set(dishes.map((d) => d.id));
+  const meal = isMeal(m.meal) ? m.meal : null;
+  const createdAt = m.createdAt ?? Date.now();
+  // 自動の献立名ができる前の献立は、これまでどおり「作成日_区分」を献立名として固定で扱う
+  const legacyMealTitle = m.titleMode === undefined && meal !== null;
   return {
     id: String(m.id),
-    title: m.title ?? "",
-    meal: isMeal(m.meal) ? m.meal : null,
+    title: legacyMealTitle ? menuTitle(createdAt, meal) : (m.title ?? ""),
+    meal,
+    titleMode: m.titleMode === "auto" ? "auto" : "fixed",
     foodTable: typeof m.foodTable === "string" && m.foodTable ? m.foodTable : LEGACY_FOOD_TABLE_ID,
     servings: typeof m.servings === "number" && Number.isInteger(m.servings) && m.servings >= 1 ? m.servings : 1,
     dishes,
@@ -53,7 +60,7 @@ export function normalizeMenu(raw: unknown): StoredMenu {
       usedWeight: r.usedWeight ?? "",
       dishId: r.dishId && dishIds.has(r.dishId) ? r.dishId : null,
     })),
-    createdAt: m.createdAt ?? Date.now(),
+    createdAt,
     updatedAt: m.updatedAt ?? Date.now(),
   };
 }

@@ -7,11 +7,13 @@
 // 発注量の表示は src/features/order-quantity/OrderView.tsx。
 // このファイルがするのは、献立の読み込みと自動保存、材料の追加・変更・削除、表示の切り替え。
 // 材料表・発注量・画像用表示のどれを出すか（mode）はURLで決まる（src/lib/route.ts）。スマホの「戻る」で1つ前の表示に戻る。
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Dish, ensureDish, pruneUnusedDishes } from "../../core/dishes";
-import { MEALS, Meal, guessMeal, menuDateStamp, menuTitle as buildMenuTitle } from "../../core/menuTitle";
+import { dishLabel, inferDishes } from "../../core/dishName";
+import { Meal, guessMeal, isMeal, menuDateStamp } from "../../core/menuTitle";
 import { NutrientRow, computeRow, round1, sumRows } from "../../core/nutrition";
 import { normalizeWeightInput, weightValue } from "../../core/weightInput";
+import { DISH_CATALOG } from "../../data/dishCatalog";
 import { CURRENT_FOOD_TABLE } from "../../data/foodTable";
 import { Food, findByCode, loadFoods } from "../../data/foods";
 import OrderView from "../../features/order-quantity/OrderView";
@@ -22,6 +24,7 @@ import AddCard, { AddDraft, EMPTY_ADD_DRAFT } from "./AddCard";
 import DeleteConfirmDialog from "./DeleteConfirmDialog";
 import { resolveDishSelection } from "./DishSelect";
 import ExportView from "./ExportView";
+import MenuTitleSelect, { TitleChoice } from "./MenuTitleSelect";
 import { Row, newRowId } from "./rows";
 import SheetTable from "./SheetTable";
 import { useWideChrome } from "./useWideChrome";
@@ -58,10 +61,27 @@ export default function Worksheet({
   const exportMode = mode === "image"; // 画像用表示
   const orderMode = mode === "order"; // 発注量の表示（材料表の代わりに出す）
   const [servings, setServings] = useState(1); // 発注量の人数
-  // 献立名は「yyyymmdd_朝食」固定形式。日付は作成日、区分だけプルダウンで選ぶ（新規は時刻から推定）
+  // 献立名は「yyyymmdd_料理名」。自動のあいだは材料から推定した料理名、推定できなければ食事区分（新規は時刻から推定）
   const [meal, setMeal] = useState<Meal | null>(() => (isNew ? guessMeal(createdAtRef.current) : null));
-  const [legacyTitle, setLegacyTitle] = useState(""); // 旧版で自由入力された献立名（区分を選ぶまでそのまま使う）
-  const menuTitle = meal ? buildMenuTitle(createdAtRef.current, meal) : legacyTitle;
+  const [titleMode, setTitleMode] = useState<"auto" | "fixed">(isNew ? "auto" : "fixed");
+  const [fixedTitle, setFixedTitle] = useState(""); // 固定のときの献立名（全体）
+  const found = useMemo(
+    () =>
+      inferDishes(
+        rows.map((r) => r.food),
+        DISH_CATALOG,
+      ),
+    [rows],
+  );
+  const candidates = found.map((m) =>
+    dishLabel(
+      m,
+      rows.map((r) => r.food),
+    ),
+  );
+  const dateStamp = menuDateStamp(createdAtRef.current);
+  const autoLabel = candidates[0] ?? meal ?? guessMeal(createdAtRef.current);
+  const menuTitle = titleMode === "auto" ? `${dateStamp}_${autoLabel}` : fixedTitle;
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null); // 削除を確認中の行
   const [skipDeleteConfirm, setSkipDeleteConfirm] = useState(false); // 設定: 材料を確認なしで連続削除
   const [loaded, setLoaded] = useState(false);
@@ -84,7 +104,8 @@ export default function Worksheet({
         createdAtRef.current = stored.createdAt;
         everSavedRef.current = true;
         setMeal(stored.meal);
-        setLegacyTitle(stored.title);
+        setTitleMode(stored.titleMode);
+        setFixedTitle(stored.title);
         foodTableRef.current = stored.foodTable;
         setServings(stored.servings);
         setDishes(stored.dishes);
@@ -100,6 +121,7 @@ export default function Worksheet({
       } else if (!isNew) {
         // 保存前の新しい献立をURLから開き直した場合など、見つからなければ新しい献立として始める
         setMeal(guessMeal(createdAtRef.current));
+        setTitleMode("auto");
       }
       setLoaded(true);
     })();
@@ -125,8 +147,9 @@ export default function Worksheet({
       }
       const stored: StoredMenu = {
         id: stableIdRef.current,
-        title: menuTitle || buildMenuTitle(createdAtRef.current, guessMeal(createdAtRef.current)),
+        title: menuTitle || `${dateStamp}_${guessMeal(createdAtRef.current)}`,
         meal,
+        titleMode,
         foodTable: foodTableRef.current,
         servings,
         dishes,
@@ -138,7 +161,17 @@ export default function Worksheet({
       everSavedRef.current = true;
     })().catch(() => {}); // 保存の失敗は画面下の注意（SaveErrorBanner）で知らせる。次の変更でまた保存を試みる
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rows, dishes, menuTitle, servings, loaded]);
+  }, [rows, dishes, menuTitle, titleMode, servings, loaded]);
+
+  function chooseTitle(choice: TitleChoice) {
+    if (choice.mode === "auto") {
+      setTitleMode("auto");
+      return;
+    }
+    setTitleMode("fixed");
+    setFixedTitle(`${dateStamp}_${choice.label}`);
+    if (isMeal(choice.label)) setMeal(choice.label);
+  }
 
   // --- 材料の追加・変更・削除 ---
 
@@ -203,23 +236,14 @@ export default function Worksheet({
         <button type="button" className="back-btn" onClick={onBack} aria-label="一覧に戻る">
           ←
         </button>
-        {/* 献立名: 日付（作成日）は固定表示、区分だけ選ぶ */}
-        <span className="menu-title-input" title={menuTitle}>
-          <span className="menu-title-date">{menuDateStamp(createdAtRef.current)}_</span>
-          <select
-            className="menu-title-meal"
-            aria-label="献立名の食事区分"
-            value={meal ?? ""}
-            onChange={(e) => setMeal((e.target.value || null) as Meal | null)}
-          >
-            {meal === null && <option value="">{legacyTitle ? `（旧: ${legacyTitle}）` : "区分を選択"}</option>}
-            {MEALS.map((m) => (
-              <option key={m} value={m}>
-                {m}
-              </option>
-            ))}
-          </select>
-        </span>
+        <MenuTitleSelect
+          date={dateStamp}
+          title={menuTitle}
+          auto={titleMode === "auto"}
+          autoLabel={autoLabel}
+          candidates={candidates}
+          onChange={chooseTitle}
+        />
         {!orderMode && (
           <button type="button" className="mode-toggle" onClick={() => onModeChange("order")}>
             発注量

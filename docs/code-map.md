@@ -47,6 +47,7 @@
 | `DeleteConfirmDialog.tsx` | 「×」を押したときの削除確認 |
 | `ExportView.tsx` | 画像用表示（提出・共有用の横長の表と「共有」ボタン） |
 | `DishSelect.tsx` | 料理タグのプルダウン（「＋自由入力…」を含む） |
+| `MenuTitleSelect.tsx` | 献立名のプルダウン（自動／料理名・朝食…で固定） |
 | `useWideChrome.ts` | 横持ちのとき、ツールバーと材料追加欄を数秒で隠す仕組み |
 | `rows.ts` | 材料1行の形（食品・使用量・タグ）などの共通部分 |
 
@@ -74,6 +75,8 @@
 | 使用量の入力チェック（全角→半角、警告の文言） | `src/core/weightInput.ts` | |
 | 料理タグの選択肢（主食・主菜…） | `src/core/dishes.ts` | `DISH_PRESETS` |
 | 献立名の区分（朝食・昼食…）・時刻からの推定 | `src/core/menuTitle.ts` | `MEALS`・`guessMeal` |
+| 献立名に付く料理（料理を足す・材料を直す） | `src/data/dishCatalog.ts` | 先頭の「書き方」に従って1品足す。`npm test` で食品番号と取り違えを確かめられる |
+| 料理名の推定の仕方（当たりやすさ・「他」の付け方） | `src/core/dishName.ts` | 設計は `docs/design/recipes-and-dish-names.md` |
 | 発注量の計算・人数の上限 | `src/core/order.ts` | `MAX_SERVINGS` |
 | 充足率の判定（不足・目標範囲・超過） | `src/core/intake.ts` | |
 | 食事摂取基準の数値 | `src/data/dri/2025.ts` | 版ごとにファイルを分けている |

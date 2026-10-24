@@ -39,6 +39,7 @@ body {
 .list-title { flex: 1; font-size: 17px; font-weight: 700; }
 .menu-title-input {
   flex: 1;
+  min-width: 0; /* 長い料理名でも、右の「発注量」「画像用表示」を画面外に押し出さない */
   height: 40px;
   display: flex;
   align-items: center;
